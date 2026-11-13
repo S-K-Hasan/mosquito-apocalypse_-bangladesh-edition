@@ -1,0 +1,6 @@
+{
+  "name": "Mosquito Apocalypse: Bangladesh Edition",
+  "description": "A 3D first-person survival-comedy game set in Dhaka fighting mutant mosquitoes with electric rackets, newspapers, mosquito coils, fans, and sprays across 6 levels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

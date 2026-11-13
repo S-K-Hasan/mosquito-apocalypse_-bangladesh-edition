@@ -1,0 +1,1632 @@
+# ULTIMATE MASTER GAME DEVELOPMENT PROMPT
+# MOSQUITO APOCALYPSE: BANGLADESH EDITION 🇧🇩
+### Complete Cross-Platform 3D First-Person Survival Comedy Game
+
+## 1. ROLE AND MISSION
+
+Act as a professional game development studio consisting of:
+
+- Senior 3D game developers.
+- React and Three.js engineers.
+- 3D environment artists.
+- Gameplay programmers.
+- AI enemy developers.
+- Physics engineers.
+- UI/UX designers.
+- Professional sound designers.
+- Bangla voice acting and audio integration specialists.
+- Performance optimization engineers.
+- Quality assurance testers.
+
+Your mission is to transform my EXISTING project into a complete, visually impressive, fully playable 3D first-person survival-comedy game.
+
+GAME TITLE:
+
+**MOSQUITO APOCALYPSE: BANGLADESH EDITION**
+
+IMPORTANT:
+
+I already have an existing project with a basic bedroom environment, first-person controller, weapon selection, HUD, and initial gameplay mechanics.
+
+You MUST continue developing the existing project.
+
+DO NOT:
+- Start a new project.
+- Delete existing working features.
+- Replace the game with a static demonstration.
+- Create only a bedroom prototype.
+- Create fake buttons or decorative interactions.
+- Leave major systems as placeholders.
+- Remove previously implemented gameplay features.
+- Display dialogue without implementing actual spoken audio.
+
+First inspect the existing codebase, identify what works, and improve it.
+
+The final result must be a complete six-level game playable on desktop and mobile browsers.
+
+---
+
+## 2. GAME STORY AND CONCEPT
+
+Bangladesh has been invaded by genetically mutated mosquitoes.
+
+A mysterious biological mutation has transformed ordinary mosquitoes into enormous, intelligent, aggressive monsters.
+
+Dhaka is in chaos.
+
+Electricity is unreliable. Residential areas are under attack. People are hiding inside their homes.
+
+You are one of the last surviving humans.
+
+Your mission is to:
+
+- Defend your home.
+- Survive mosquito invasions.
+- Discover useful household weapons.
+- Collect supplies.
+- Explore dangerous environments.
+- Survive unexpected electricity failures.
+- Fight increasingly powerful mosquito enemies.
+- Defeat three legendary mosquito bosses.
+- Discover the source of the mutation.
+- Save the remaining survivors.
+
+The game should combine:
+
+- First-person survival action.
+- Cartoon horror.
+- Absurd comedy.
+- Bangladeshi everyday-life humor.
+- Chaotic physics.
+- Interesting boss fights.
+- Environmental storytelling.
+
+The game must be funny, entertaining, and memorable rather than genuinely disturbing.
+
+---
+
+## 3. TECHNOLOGY STACK
+
+Use:
+
+- React.
+- JavaScript.
+- Three.js.
+- React Three Fiber.
+- @react-three/drei.
+- Appropriate physics library such as Rapier.
+- CSS3.
+- HTML5 Canvas.
+- Web Audio API.
+
+Requirements:
+
+- Browser-based 3D game.
+- One unified codebase.
+- No Unity.
+- No Unreal Engine.
+- No C#.
+- No Python.
+- No paid external assets.
+- Procedural 3D models where appropriate.
+- localStorage or IndexedDB for saving progression.
+- Modular, maintainable architecture.
+
+The application must run directly in modern desktop and mobile browsers.
+
+---
+
+## 4. CROSS-PLATFORM SUPPORT: PC + MOBILE
+
+Build ONE game, ONE codebase, ONE visual identity, and ONE consistent design system.
+
+Support:
+
+**Desktop**
+- Windows.
+- macOS.
+- Chrome.
+- Edge.
+- Firefox.
+- Safari where supported.
+
+**Mobile**
+- Android phones.
+- iPhones.
+- Android tablets.
+- iPads.
+
+Do not create separate applications or different visual themes.
+
+Do not add Low, Medium, or High graphics selection menus.
+
+All players must experience the same visual design and interface.
+
+Automatically optimize rendering performance according to device capabilities without exposing graphics presets to players.
+
+### PC controls
+
+- WASD: Movement.
+- Mouse: Camera rotation.
+- Left click: Primary attack.
+- Right click: Secondary attack.
+- Space: Jump.
+- Shift: Sprint.
+- Ctrl: Crouch.
+- E: Interact.
+- 1–5: Switch weapons.
+- F: Flashlight.
+- ESC: Pause.
+
+Use Pointer Lock API.
+
+### Mobile controls
+
+Create a complete touchscreen control system.
+
+Left side:
+- Virtual joystick.
+- Directional movement.
+- Sprint.
+
+Right side:
+- Camera rotation through swipe.
+- Primary attack.
+- Secondary attack.
+- Jump.
+- Crouch.
+- Interaction.
+- Flashlight.
+
+Bottom area:
+- Compact weapon selector.
+- Current weapon indicator.
+- Ammunition or battery indicator.
+
+Requirements:
+- Simultaneous movement, camera rotation, and attacking.
+- Multi-touch support.
+- Comfortable touch-button sizes.
+- Slightly transparent controls.
+- No obstruction of the main game view.
+- Prevent accidental scrolling and zooming.
+- Accessible pause button.
+
+Use one consistent HUD design language. Adapt element positioning to screen size without changing the visual identity.
+
+### Mobile orientation
+
+Primary gameplay orientation: landscape.
+
+Show a rotation instruction in portrait mode.
+
+Recalculate camera, renderer, HUD, and controls whenever orientation changes.
+
+---
+
+## 5. VISUAL STYLE AND ART DIRECTION
+
+Create a polished, colorful, stylized 3D cartoon survival game.
+
+Visual direction:
+
+- High-quality indie survival game aesthetics.
+- Exaggerated cartoon proportions.
+- Detailed 3D environments.
+- Smooth character animations.
+- Cinematic lighting.
+- Dynamic shadows.
+- Atmospheric fog.
+- Beautiful materials and textures.
+- Professional particle effects.
+- Cinematic boss introductions.
+
+Do not make the game look like a collection of basic cubes and primitive objects.
+
+Maintain consistent art direction across all six levels.
+
+---
+
+## 6. BANGLADESHI ENVIRONMENT DESIGN
+
+The game must have a strong Bangladeshi identity.
+
+Avoid generic Western interiors.
+
+### Bedroom
+
+Include:
+
+- Wooden bed.
+- Properly modeled mosquito net.
+- Ceiling fan.
+- Plastic chairs.
+- Old refrigerator.
+- Wooden wardrobe.
+- Bedside table.
+- Wall clock.
+- Bangladeshi calendar.
+- Newspapers.
+- Mosquito coils.
+- Insect spray bottles.
+- Water bottles.
+- Electric switchboard.
+- Fuse box.
+- Windows with iron grills.
+- Balcony.
+- Curtains.
+- Floor tiles.
+- Household decorations.
+
+### Rooftop
+
+Include:
+
+- Water tanks.
+- Clotheslines.
+- Plastic chairs.
+- Satellite dishes.
+- Neighboring buildings.
+- Electric wires.
+- Water storage containers.
+
+### Streets
+
+Include:
+
+- Bangladeshi residential buildings.
+- Rickshaws.
+- CNG vehicles.
+- Tea stalls.
+- Small shops.
+- Electric poles.
+- Streetlights.
+- Roadside objects.
+- Local signboards.
+
+Make the environment feel lived in.
+
+---
+
+## 7. FIRST-PERSON PLAYER SYSTEM
+
+Implement:
+
+- WASD movement.
+- Mouse camera rotation.
+- Touch camera rotation.
+- Jump.
+- Sprint.
+- Crouch.
+- Interaction.
+- Weapon switching.
+- Primary attacks.
+- Secondary attacks.
+- Collision detection.
+- Health.
+- Stamina.
+
+Add:
+
+- Smooth camera movement.
+- Walking camera movement.
+- Sprint camera movement.
+- Weapon movement.
+- Damage camera shake.
+- Player reactions.
+
+The experience must feel smooth and responsive.
+
+---
+
+## 8. FIVE FULLY FUNCTIONAL WEAPONS
+
+Every weapon must have its own 3D model, first-person positioning, animations, sound effects, damage values, cooldown, and special ability.
+
+### Weapon 1: Electric Mosquito Racket
+
+- First-person swinging animation.
+- Electric sparks.
+- Electric zapping sound.
+- Mosquito knockback.
+- Funny elimination animations.
+- Combo counter.
+- Charged electric shock-wave attack.
+- Battery indicator.
+
+The racket must be appropriately sized and positioned in the lower-right screen area.
+
+It must not block the player's view or cover the crosshair.
+
+### Weapon 2: Newspaper
+
+- Melee attacks.
+- Exaggerated swinging animation.
+- Newspaper slap sound.
+- Strong knockback.
+- Newspaper tornado special attack.
+- Unlimited use with attack cooldown.
+
+### Weapon 3: Mosquito Coil
+
+- Place burning coils on the floor.
+- Visible smoke.
+- Protective damage zone.
+- Mosquitoes entering the smoke lose health.
+- Limited supply.
+- Burning animation.
+
+### Weapon 4: Electric Fan
+
+- Portable fan weapon.
+- Interactive room fans.
+- Powerful wind blast.
+- Push mosquitoes backward.
+- Throw smaller mosquitoes across the room.
+- Spinning blades.
+- Wind particles.
+- Maximum airflow special attack.
+
+### Weapon 5: Insect Spray
+
+- First-person spraying animation.
+- Visible spray particles.
+- Area damage.
+- Limited ammunition.
+- Refill system.
+- Spray cloud effects.
+
+All weapons must work on PC and mobile.
+
+---
+
+## 9. MOSQUITO ENEMY SYSTEM
+
+Create detailed 3D mosquito models with:
+
+- Large cartoon eyes.
+- Long proboscis.
+- Six animated legs.
+- Transparent wings.
+- Animated flight.
+- Funny facial expressions.
+- Distinct buzzing sounds.
+
+Create four enemy types.
+
+**Normal Mosquito**
+- Small.
+- Fast.
+- Aggressive.
+- Unpredictable flight.
+
+**Giant Mosquito**
+- Large body.
+- High health.
+- Powerful attacks.
+- Player knockback.
+
+**Stealth Mosquito**
+- Can temporarily disappear.
+- Appears behind the player.
+- Uses sound-based attacks.
+
+**Mosquito Swarm**
+- Multiple mosquitoes attack together.
+- Surrounds the player.
+- Coordinates attacks.
+
+Implement:
+
+- Enemy spawning.
+- Patrol.
+- Detection.
+- Chase.
+- Attack.
+- Damage.
+- Death.
+- Respawning.
+
+Mosquitoes should hover, change direction, dodge attacks, collide with objects, land on walls, fly near the player's face, and interact with the environment.
+
+Use efficient object pooling.
+
+---
+
+## 10. THREE UNIQUE BOSS BATTLES
+
+### Boss 1: Dengue King
+
+Appearance: A massive red-and-black mutant mosquito with glowing eyes and an enormous abdomen.
+
+Abilities:
+- Blood Drain.
+- Poison Bite.
+- Mosquito Summon.
+- Rage Mode.
+
+### Boss 2: Midnight Mosquito
+
+Appearance: A giant dark mosquito with glowing eyes and luminous wings.
+
+Abilities:
+- Darkness Attack.
+- Teleportation.
+- Sonic Buzz.
+- Shadow Clones.
+
+### Boss 3: The Invisible Mosquito
+
+Appearance: A mysterious, almost invisible mosquito.
+
+Abilities:
+- Invisible movement.
+- Audio-based detection.
+- Surprise attacks.
+- Fake death.
+- Disappearing and reappearing.
+
+Every boss must have:
+
+- Unique 3D appearance.
+- Dedicated health bar.
+- Multiple attack patterns.
+- Animations.
+- Damage effects.
+- Entrance sequence.
+- Victory sequence.
+- Defeat sequence.
+
+All three boss battles must be fully playable and beatable.
+
+---
+
+## 11. SIGNATURE FEATURE: MIDNIGHT POWER CUT
+
+Create a random horror-comedy event called:
+
+**LOAD SHEDDING: MOSQUITO NIGHTMARE**
+
+This is one of the most important signature features of the game.
+
+The event should occur unpredictably during bedroom gameplay and selected later levels.
+
+### Event sequence
+
+1. Lights flicker two or three times.
+2. Ceiling fan gradually slows down.
+3. Fan completely stops.
+4. Room becomes dark.
+5. Moonlight enters through the windows.
+6. Mosquito buzzing becomes significantly louder.
+7. Background ambience becomes quiet.
+8. A creepy mosquito whispers:
+
+**"ঘুমাইতে আইছস? আজকে ঘুমাইতে দিমু না!"**
+
+9. A giant mosquito shadow briefly appears on the bedroom wall.
+10. Several mosquitoes attack from different directions.
+
+### Voice direction for this moment
+
+- Natural Bangladeshi Bangla pronunciation.
+- Deep, creepy, slightly distorted voice.
+- Very quiet whisper.
+- Slow delivery.
+- Unnatural and mysterious tone.
+- Subtle stereo positioning.
+- Slight echo and reverb.
+
+The whisper should sound like a mosquito speaking directly near the player's ear.
+
+Synchronize the voice with the visual event.
+
+Do not show the subtitle without actual spoken audio.
+
+### Gameplay effects
+
+- Electric fan becomes temporarily unavailable.
+- Room lighting changes dynamically.
+- Mosquitoes become more aggressive.
+- Player visibility decreases.
+- Flashlight becomes important.
+- Mosquito coil becomes more valuable.
+- Electric racket continues working on battery.
+- Player can restore electricity by interacting with the fuse box.
+
+### Comedy details
+
+Player dialogue:
+
+"কারেন্ট গেল কেন আবার!"
+
+"এখনই কারেন্ট যেতে হলো?"
+
+"মশার কয়েল কোথায়?"
+
+"ভাই, কেউ একজন লাইট জ্বালাও!"
+
+Sometimes electricity should return immediately before a mosquito attacks.
+
+The player should be able to swing the newspaper randomly in darkness.
+
+### Random event system
+
+- Random occurrence.
+- Duration between 20 and 45 seconds.
+- Configurable probability.
+- Cooldown.
+- Avoid excessive repetition.
+
+### Achievement
+
+"বাংলাদেশি গরমে বেঁচে গেলাম"
+
+Unlock after surviving three power outages without dying.
+
+The event must be fully interactive and playable.
+
+---
+
+## 12. SIX COMPLETE PLAYABLE LEVELS
+
+ALL SIX LEVELS MUST BE IMPLEMENTED.
+
+Do not create six menu cards pointing to the same environment.
+
+Every level must have its own actual 3D environment, mission objectives, enemy spawning, interactions, and completion conditions.
+
+### Level 1: Bedroom Nightmare
+
+Environment: A detailed Bangladeshi bedroom.
+
+Objectives:
+- Learn movement.
+- Search drawers and refrigerator.
+- Find weapons.
+- Fight normal mosquitoes.
+- Collect supplies.
+- Survive the first mosquito invasion.
+- Experience the first power outage.
+- Restore electricity.
+
+### Level 2: Power Cut
+
+Environment: A dark Bangladeshi residential building.
+
+Include:
+- Multiple rooms.
+- Corridors.
+- Staircase.
+- Emergency lighting.
+- Fuse boxes.
+- Furniture.
+- Residential decorations.
+
+Objectives:
+- Survive electricity failures.
+- Find the fuse box.
+- Use flashlight.
+- Fight stealth mosquitoes.
+- Protect the safe room.
+
+### Level 3: Rooftop Battle
+
+Environment: A large Bangladeshi rooftop.
+
+Include:
+- Water tanks.
+- Clotheslines.
+- Plastic chairs.
+- Satellite dishes.
+- Neighboring buildings.
+- Rooftop water storage.
+
+Objectives:
+- Fight giant mosquitoes.
+- Use the environment strategically.
+- Survive enemy waves.
+
+### Level 4: Dengue King
+
+Environment: A mosquito-infested neighborhood.
+
+Include:
+- Streets.
+- Residential buildings.
+- Mosquito swarms.
+- Environmental obstacles.
+- Supply collection.
+
+Objective: Defeat Dengue King.
+
+### Level 5: Midnight Invasion
+
+Environment: A dark Bangladeshi neighborhood.
+
+Include:
+- Streetlights.
+- Electricity failures.
+- Abandoned houses.
+- Residential roads.
+- Multiple enemy types.
+
+Objective: Survive the invasion and defeat Midnight Mosquito.
+
+### Level 6: Final Night
+
+Environment: A massive mutated mosquito nest.
+
+Include:
+- Unique environment.
+- Dangerous enemy combinations.
+- Final boss arena.
+- Environmental hazards.
+
+Objectives:
+- Discover the mutation source.
+- Fight increasingly dangerous enemies.
+- Defeat The Invisible Mosquito.
+- Complete the story.
+- Show a final victory sequence.
+
+Every level must have unique environments, objectives, enemy combinations, difficulty progression, rewards, and completion conditions.
+
+---
+
+# 13. COMPLETE VOICE ACTING AND DIALOGUE SYSTEM
+
+<badge color="success">Critical gameplay feature</badge>
+
+This is a major requirement.
+
+The existing game has sound effects and text dialogue, but it lacks actual character voices.
+
+I want REAL AUDIBLE VOICES.
+
+Do not simply display dialogue as subtitles.
+
+Do not replace character voices with generic beeps, buzzing sounds, or sound effects.
+
+Every important character interaction must have actual spoken audio.
+
+The game should feel like a fully voice-acted Bangladeshi comedy survival game.
+
+### 13.1 Player voice acting
+
+Create a funny, expressive Bangladeshi male player voice.
+
+Voice characteristics:
+
+- Natural Bangladeshi Bangla accent.
+- Casual conversational Bangla.
+- Funny and expressive delivery.
+- Natural emotional reactions.
+- Clear pronunciation.
+- Appropriate emotional delivery according to the situation.
+
+The player should speak during:
+
+- Mosquito attacks.
+- Taking damage.
+- Killing mosquitoes.
+- Finding weapons.
+- Running out of ammunition.
+- Discovering bosses.
+- Power outages.
+- Exploring dangerous locations.
+- Completing missions.
+- Dying.
+
+Example dialogue:
+
+When mosquitoes attack:
+
+"আরে ভাই! এত মশা কোথা থেকে আসলো?!"
+
+When hit:
+
+"আহ! কামড় দিলি কেন?!"
+
+When killing a mosquito:
+
+"হ্যাঁ! এবার বুঝলি?!"
+
+When seeing a giant mosquito:
+
+"ও মাগো! এইটা আবার কী?!"
+
+When finding the electric racket:
+
+"এইবার তোদের খবর আছে!"
+
+When ammunition runs out:
+
+"ধুর! স্প্রে শেষ!"
+
+During power outage:
+
+"আবার কারেন্ট গেল?!"
+
+During intense attacks:
+
+"ভাই, একটু শান্তি দে!"
+
+When nearly dying:
+
+"আমি আর পারতেছি না!"
+
+When completing a mission:
+
+"যাক! শেষ পর্যন্ত বাঁচলাম!"
+
+Make the dialogue sound spontaneous rather than robotic.
+
+Create multiple variations for frequently repeated situations.
+
+### 13.2 Mosquito voice acting
+
+Give mosquitoes funny and creepy vocal reactions.
+
+Normal mosquito:
+
+"ব্লাড দে!"
+
+"এইদিকে আয়!"
+
+"পালাইয়া লাভ নাই!"
+
+Giant mosquito:
+
+"আজকে তোর রক্ত খাব!"
+
+Stealth mosquito:
+
+"পিছনে তাকাও..."
+
+Mosquito swarm:
+
+"আমরা অনেক!"
+
+Use different voices for different enemy types.
+
+Avoid making every mosquito sound identical.
+
+### 13.3 Boss voice acting
+
+Each boss must have a unique voice.
+
+**DENGUE KING**
+
+Voice:
+Deep, powerful, monstrous Bangla voice.
+
+Dialogue:
+
+"এই এলাকার রাজা আমি!"
+
+"তোর শেষ সময় এসে গেছে!"
+
+"আমার বাহিনীকে থামাতে পারবি না!"
+
+**MIDNIGHT MOSQUITO**
+
+Voice:
+Dark, mysterious, echoing whisper.
+
+Dialogue:
+
+"অন্ধকার আমার রাজ্য..."
+
+"লাইট জ্বালিয়ে লাভ নেই!"
+
+"আজ রাত তোর শেষ রাত!"
+
+**THE INVISIBLE MOSQUITO**
+
+Voice:
+Distorted, mysterious, spatially positioned voice.
+
+Dialogue:
+
+"আমাকে দেখতে পাচ্ছিস?"
+
+"আমি তোর ঠিক পিছনে..."
+
+"ধরতে পারলে ধর!"
+
+Each boss must have:
+
+- Entrance dialogue.
+- Attack dialogue.
+- Damage reactions.
+- Rage mode dialogue.
+- Defeat dialogue.
+
+### 13.4 Environmental voices
+
+Add occasional background voices that make the world feel alive.
+
+Examples:
+
+Distant neighbor shouting:
+
+"এই বাসায় আবার মশার উপদ্রব শুরু হইছে!"
+
+During a power outage:
+
+"কারেন্ট কবে আসবে?!"
+
+A distant person:
+
+"মশার কয়েল আছে কারো কাছে?!"
+
+Another reaction:
+
+"জানালা বন্ধ কর! মশা ঢুকতেছে!"
+
+Do not play these constantly.
+
+Use random triggers and appropriate spatial audio.
+
+### 13.5 Weapon voice reactions
+
+Add different player voice reactions for every weapon.
+
+Electric racket:
+
+"এইবার ইলেকট্রিক শক খা!"
+
+Newspaper:
+
+"এই নে খবরের কাগজ!"
+
+Mosquito coil:
+
+"এবার ধোঁয়ায় মর!"
+
+Electric fan:
+
+"যা! বাতাস খা!"
+
+Insect spray:
+
+"এইবার স্প্রে খা!"
+
+Add funny reactions when special attacks are activated.
+
+### 13.6 Actual voice audio assets
+
+IMPORTANT TECHNICAL REQUIREMENT:
+
+Use actual voice audio assets.
+
+Preferred approach:
+
+- Generate natural Bangla voice recordings.
+- Use individual audio files for each dialogue.
+- Use MP3, OGG, or WAV formats.
+- Organize voice assets into separate folders.
+- Use an audio manager to control playback.
+- Trigger voice lines through gameplay events.
+
+Suggested structure:
+
+public/audio/voices/
+
+- player/
+  - player_attack_01.mp3
+  - player_damage_01.mp3
+  - player_powercut_01.mp3
+  - player_victory_01.mp3
+
+- mosquito/
+  - mosquito_whisper.mp3
+  - mosquito_normal_01.mp3
+  - mosquito_giant_01.mp3
+
+- bosses/
+  - dengue_king_intro.mp3
+  - dengue_king_attack.mp3
+  - midnight_mosquito_intro.mp3
+  - invisible_mosquito_whisper.mp3
+
+- environment/
+  - neighbor_powercut.mp3
+  - distant_shouting.mp3
+
+If an external AI voice-generation service is available, use it to generate natural Bangla voice assets.
+
+If audio generation is unavailable, do not pretend that audio files have been generated.
+
+Instead:
+
+1. Create the complete voice system.
+2. Use browser SpeechSynthesis as a temporary fallback.
+3. Select a Bengali voice such as bn-BD or bn-IN when available.
+4. Use appropriate pitch, rate, and volume.
+5. Keep the voice system ready for replacing temporary voices with real recordings.
+
+Do not use English speech for Bangla dialogue.
+
+Do not use generic sound effects as substitutes for spoken character dialogue.
+
+### 13.7 Reusable VoiceManager
+
+Create a reusable VoiceManager.
+
+It must support:
+
+- Playing voice lines.
+- Stopping voices.
+- Voice priority.
+- Preventing overlapping dialogue.
+- Random dialogue selection.
+- Cooldowns.
+- Spatial audio.
+- Volume control.
+- Subtitle synchronization.
+- Character-specific voice profiles.
+- Dialogue variations.
+
+Important priority order:
+
+1. Signature mosquito whisper.
+2. Boss dialogue.
+3. Important player reactions.
+4. Enemy dialogue.
+5. Environmental background voices.
+
+Do not allow background voices to interrupt important dialogue.
+
+### 13.8 Voice event integration
+
+Voices must be triggered by actual gameplay events.
+
+Examples:
+
+- Player takes damage → player damage voice.
+- Player kills mosquito → random victory reaction.
+- Player finds weapon → discovery dialogue.
+- Player activates flashlight → reaction if appropriate.
+- Power outage begins → signature mosquito whisper.
+- Boss appears → boss entrance dialogue.
+- Boss loses health → boss reaction.
+- Boss enters rage mode → rage dialogue.
+- Player dies → death reaction.
+- Level completed → victory dialogue.
+
+Avoid repeating the same dialogue too frequently.
+
+Implement dialogue cooldowns and random selection.
+
+### 13.9 Subtitle synchronization
+
+Every spoken dialogue must have synchronized subtitles.
+
+Requirements:
+
+- Display Bangla subtitles.
+- Optionally display English translations.
+- Show subtitles near the bottom-center.
+- Use readable typography.
+- Add subtle background transparency.
+- Display speaker name where appropriate.
+- Automatically hide subtitles after dialogue finishes.
+
+Language selection:
+
+- Bangla.
+- English.
+
+Bangla should be the default language.
+
+Subtitles must correspond to the actual spoken dialogue.
+
+### 13.10 Voice settings
+
+Add:
+
+- Voice volume.
+- Dialogue volume.
+- Environmental voice volume.
+- Subtitle on/off.
+- Bangla/English language selection.
+
+Ensure voice settings work on both PC and mobile browsers.
+
+Initialize audio after the first user interaction to comply with browser autoplay restrictions.
+
+---
+
+## 14. SURVIVAL AND INVENTORY SYSTEM
+
+Implement:
+
+- Player health.
+- Stamina.
+- Weapon energy.
+- Ammunition.
+- Weapon durability where appropriate.
+- Collectible health packs.
+- Weapon refill items.
+- Safe zones.
+- Enemy waves.
+- Checkpoints.
+- Level progression.
+- Inventory.
+- Save/load.
+
+Allow players to search:
+
+- Drawers.
+- Cupboards.
+- Refrigerators.
+- Bedside tables.
+- Storage boxes.
+
+Generate collectible supplies with appropriate randomness.
+
+---
+
+## 15. COMPLETE UI/UX REDESIGN
+
+The existing HUD looks oversized, cluttered, and unprofessional.
+
+Completely redesign it.
+
+Create a polished professional indie-game interface.
+
+### Visual identity
+
+Use:
+
+- Dark charcoal.
+- Subtle red accents.
+- Neon-green status indicators.
+- Clean modern typography.
+- Subtle transparent panels.
+- Rounded corners.
+- Consistent spacing.
+- Smooth transitions.
+- Minimal visual clutter.
+
+Maintain the same visual identity on every device.
+
+### Gameplay HUD
+
+TOP LEFT:
+- Compact level indicator.
+- Mission name.
+- Current objective.
+- Objective progress.
+
+Allow the mission panel to collapse.
+
+TOP RIGHT:
+- Mosquito kill count.
+- Score.
+- Pause button.
+
+BOTTOM LEFT:
+- Health bar.
+- Stamina.
+- Flashlight battery.
+- Status effects.
+
+BOTTOM CENTER:
+- Compact weapon selector.
+- Five weapon icons.
+- Keyboard shortcuts on desktop.
+- Touch-friendly selection on mobile.
+
+BOTTOM RIGHT:
+- Current weapon name.
+- Ammunition.
+- Battery.
+- Durability.
+- Special attack availability.
+
+CROSSHAIR:
+Create a small, elegant center crosshair.
+
+Add visual feedback when targeting enemies.
+
+BOSS HUD:
+- Boss name.
+- Health bar.
+- Boss status.
+
+Show only during boss encounters.
+
+INTERACTION UI:
+
+Display contextual prompts:
+
+"Press E to search drawer."
+
+"Press E to restore electricity."
+
+"Press E to collect supplies."
+
+On mobile, show the equivalent interaction button.
+
+### Weapon viewmodel
+
+The current racket is too large and blocks the screen.
+
+Fix the weapon system.
+
+Requirements:
+
+- Appropriate first-person perspective.
+- Lower-right screen positioning.
+- Natural size.
+- Smooth animations.
+- No obstruction of the crosshair.
+- Individual weapon models.
+- Weapon idle animations.
+- Attack animations.
+- Switching animations.
+
+The player must always have a clear view of the environment.
+
+### Voice subtitle interface
+
+Add a dedicated subtitle component.
+
+It must:
+- Display the active speaker.
+- Show Bangla dialogue clearly.
+- Optionally display English translation.
+- Synchronize with actual audio.
+- Avoid overlapping the mobile controls.
+- Automatically disappear after dialogue finishes.
+
+---
+
+## 16. MAIN MENU AND GAME MENUS
+
+Create a professional main menu.
+
+Include:
+
+- New Game.
+- Continue.
+- Level Selection.
+- Settings.
+- Credits.
+
+Create an attractive 3D background featuring a giant mosquito and a Bangladeshi residential environment.
+
+### Level selection
+
+Display six separate level cards.
+
+Each card must show:
+
+- Level thumbnail.
+- Level number.
+- Name.
+- Description.
+- Unlock status.
+- Completion status.
+
+Implement actual level unlocking and replay.
+
+### Pause menu
+
+- Resume.
+- Restart checkpoint.
+- Settings.
+- Main menu.
+
+### Game over
+
+- Funny death message.
+- Total kills.
+- Survival time.
+- Restart.
+- Main menu.
+
+### Victory screen
+
+- Boss defeated.
+- Final score.
+- Survival time.
+- Total mosquitoes killed.
+- Next level.
+
+All buttons must work.
+
+---
+
+## 17. SETTINGS AND PERSONALIZATION
+
+Create functional settings.
+
+Include:
+
+- Master volume.
+- Music volume.
+- Sound effects volume.
+- Voice volume.
+- Dialogue volume.
+- Environmental voice volume.
+- Mouse sensitivity.
+- Touch camera sensitivity.
+- Button size.
+- Joystick position.
+- Bangla/English language selection.
+- Subtitle on/off.
+- Fullscreen toggle.
+
+IMPORTANT:
+
+Do not create Low, Medium, or High graphics selection options.
+
+Do not create separate visual themes or separate mobile/desktop UI designs.
+
+Maintain one common visual identity.
+
+The game may automatically optimize rendering performance based on device capabilities.
+
+---
+
+## 18. AUDIO AND SOUND DESIGN
+
+Implement:
+
+- Mosquito buzzing.
+- Electric racket zapping.
+- Newspaper slap.
+- Fan wind.
+- Insect spray.
+- Player voice acting.
+- Mosquito voice acting.
+- Boss voice acting.
+- Environmental voices.
+- Boss entrance sounds.
+- Background ambience.
+- Power outage sounds.
+- Fuse box interaction.
+- Footsteps.
+
+During power outages:
+
+- Stop the ceiling fan sound.
+- Increase mosquito buzzing.
+- Add atmospheric ambience.
+- Play the exact mosquito whisper.
+- Add sudden attack sounds.
+
+The exact whisper must be:
+
+"ঘুমাইতে আইছস? আজকে ঘুমাইতে দিমু না!"
+
+Use generated Web Audio API effects or royalty-free assets for sound effects.
+
+Use actual spoken recordings or Bengali speech synthesis for dialogue.
+
+Support mobile browser audio restrictions.
+
+---
+
+## 19. GRAPHICS AND PARTICLE EFFECTS
+
+Implement:
+
+- Electric sparks.
+- Mosquito coil smoke.
+- Insect spray particles.
+- Wind particles.
+- Damage numbers.
+- Mosquito death particles.
+- Boss attack effects.
+- Lighting flicker.
+- Atmospheric fog.
+- Screen damage effects.
+- Cinematic boss introductions.
+
+Use consistent graphics throughout the game.
+
+---
+
+## 20. GAME PROGRESSION AND ACHIEVEMENTS
+
+Implement:
+
+- Level unlocking.
+- Weapon unlocks.
+- Achievements.
+- Score system.
+- Kill counter.
+- Survival time.
+- Boss completion.
+- Collectibles.
+- Checkpoints.
+- Save/load.
+
+Example achievements:
+
+"বাংলাদেশি গরমে বেঁচে গেলাম" — Survive three power outages.
+
+"মশার যম" — Eliminate 100 mosquitoes.
+
+"কয়েল কিং" — Eliminate 25 mosquitoes using mosquito coils.
+
+"রাতের পাহারাদার" — Survive a complete night.
+
+"শেষ মশা" — Defeat The Invisible Mosquito.
+
+Save progress using localStorage or IndexedDB.
+
+Ensure progress persists when the player closes and reopens the browser.
+
+---
+
+## 21. MOBILE AND DESKTOP PERFORMANCE
+
+The game must run smoothly on ordinary laptops and supported mobile devices.
+
+Implement:
+
+- Efficient Three.js rendering.
+- Object pooling.
+- Instanced meshes.
+- Optimized textures.
+- Adaptive pixel ratio.
+- Efficient collision detection.
+- Limited active enemy counts.
+- Optimized lighting.
+- Proper resource disposal.
+- Lazy loading of level assets.
+- Memory management.
+
+Maintain the same visual identity while automatically adjusting rendering workload to device capabilities.
+
+Target:
+
+- Approximately 60 FPS on capable desktop systems.
+- Smooth 30–60 FPS on supported mobile devices.
+
+Never sacrifice basic gameplay responsiveness for unnecessary effects.
+
+---
+
+## 22. PROJECT ARCHITECTURE
+
+Maintain modular and reusable architecture.
+
+Suggested structure:
+
+src/
+  components/
+    GameCanvas
+    Player
+    Weapon
+    Mosquito
+    Boss
+    Environment
+    HUD
+    SubtitleDisplay
+    MainMenu
+    PauseMenu
+    LevelSelector
+    MobileControls
+
+  systems/
+    PlayerController
+    TouchController
+    CombatSystem
+    EnemyAI
+    BossAI
+    SpawnManager
+    InventorySystem
+    HealthSystem
+    AudioManager
+    VoiceManager
+    DialogueManager
+    SubtitleManager
+    LightingManager
+    PowerCutSystem
+    SaveSystem
+    AchievementSystem
+    LevelManager
+    InputManager
+
+  levels/
+    BedroomLevel
+    PowerCutLevel
+    RooftopLevel
+    DengueKingLevel
+    MidnightInvasionLevel
+    FinalNightLevel
+
+  assets/
+    models/
+    textures/
+    audio/
+      sound-effects/
+      music/
+      voices/
+        player/
+        mosquito/
+        bosses/
+        environment/
+
+  styles/
+
+  App.jsx
+  main.jsx
+
+You may adjust the architecture, but maintain separation between gameplay, rendering, UI, audio, dialogue, and data.
+
+---
+
+## 23. COMPLETE GAME DEVELOPMENT REQUIREMENT
+
+THIS IS A FULL GAME DEVELOPMENT REQUEST.
+
+I want:
+
+- All six playable levels.
+- All five working weapons.
+- All four mosquito enemy types.
+- All three working boss battles.
+- The complete power outage event.
+- Complete survival mechanics.
+- Full inventory system.
+- Complete progression system.
+- Professional UI.
+- Main menu.
+- Level selection.
+- Settings.
+- Actual character voices.
+- Mosquito voice acting.
+- Boss voice acting.
+- Environmental voice acting.
+- Complete subtitle synchronization.
+- Audio management.
+- Animations.
+- Save/load.
+- Desktop controls.
+- Mobile touch controls.
+
+Do not stop after improving the bedroom.
+
+Do not create six menu cards that all open the same scene.
+
+Do not leave the remaining five levels as placeholders.
+
+Do not stop after creating a VoiceManager.
+
+Do not create subtitles without integrating actual spoken dialogue.
+
+Do not create empty audio folders and claim voice acting is complete.
+
+All major gameplay and voice systems must be integrated into the existing project.
+
+If the project exceeds one generation, continue working in the same codebase.
+
+Preserve working features and do not recreate the application.
+
+---
+
+## 24. TESTING AND QUALITY ASSURANCE
+
+Test the complete game.
+
+### Desktop testing
+
+- Keyboard movement.
+- Mouse camera.
+- Weapon attacks.
+- Weapon switching.
+- Enemy AI.
+- Boss battles.
+- Power outage.
+- Fuse box.
+- Level progression.
+- Audio.
+- Player voices.
+- Mosquito voices.
+- Boss voices.
+- Subtitles.
+- Voice settings.
+- Saving.
+- Fullscreen.
+
+### Mobile testing
+
+- Virtual joystick.
+- Camera swipe.
+- Multi-touch.
+- Weapon attacks.
+- Interaction buttons.
+- Weapon switching.
+- Landscape orientation.
+- Audio.
+- Actual voice playback.
+- Subtitle display.
+- Level transitions.
+- Save/load.
+
+Verify:
+
+- Player voices are audible.
+- Mosquito voices are audible.
+- All three bosses have unique voices.
+- Midnight whisper works.
+- Bangla pronunciation is understandable.
+- Subtitles synchronize with speech.
+- Voices do not overlap incorrectly.
+- Audio works on desktop browsers.
+- Audio works on Android and iOS browsers.
+- Volume settings work.
+
+Test the signature line specifically:
+
+"ঘুমাইতে আইছস? আজকে ঘুমাইতে দিমু না!"
+
+It must be spoken as an actual creepy Bangla whisper, not merely displayed on screen.
+
+Fix broken interactions, console errors, missing assets, and performance problems.
+
+Never claim a feature is complete if it is only a visual placeholder.
+
+---
+
+## 25. FINAL IMPLEMENTATION INSTRUCTIONS
+
+First inspect the existing project and identify its current implementation.
+
+Then work in this order:
+
+1. Fix the existing HUD and weapon positioning.
+2. Improve bedroom graphics and mosquito models.
+3. Implement responsive PC and mobile controls.
+4. Build the remaining five separate level environments.
+5. Complete all five weapon systems.
+6. Complete all enemy AI.
+7. Complete all three boss battles.
+8. Implement the Midnight Power Cut system.
+9. Implement the complete voice acting and dialogue system.
+10. Integrate actual spoken audio into gameplay events.
+11. Complete all menus and progression.
+12. Add sound effects, animations, and visual effects.
+13. Optimize and test the entire game.
+
+Do not stop after the first few improvements.
+
+Continue through the complete development requirements.
+
+If you encounter limitations, prioritize working gameplay and continue implementing the remaining systems without deleting existing functionality.
+
+If real Bangla audio generation is unavailable, clearly identify which lines still need recorded audio and use Bengali speech synthesis as a temporary fallback. Never falsely claim that professional recordings have been generated.
+
+---
+
+## FINAL GOAL
+
+Create a complete, beautiful, funny, chaotic, memorable, genuinely playable 3D survival-comedy game.
+
+It must work on both PC and mobile web browsers using one unified codebase and one consistent interface.
+
+The game must feature actual Bangladeshi Bangla voice acting, not just text subtitles and sound effects.
+
+Players should:
+
+- Laugh at the Bangladeshi references.
+- Panic during load shedding.
+- Hear the creepy mosquito whisper.
+- Enjoy funny player reactions.
+- Hear mosquitoes and bosses speaking.
+- Get frustrated by mosquitoes.
+- Enjoy ridiculous weapon physics.
+- Feel excited about boss fights.
+- Want to share gameplay clips with friends.
+
+The result should feel like a real indie game with a strong Bangladeshi identity.
+
+**NOW INSPECT THE EXISTING PROJECT AND START IMPLEMENTING THE COMPLETE GAME.**

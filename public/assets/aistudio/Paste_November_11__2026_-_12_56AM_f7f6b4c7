@@ -1,0 +1,1106 @@
+# ULTIMATE MASTER PROMPT — MOSQUITO APOCALYPSE: BANGLADESH EDITION
+## COMPLETE STORY + MISSIONS + EXTREME DIFFICULTY + BANGLA SLANG VOICES + HIGH-QUALITY 3D GRAPHICS
+
+# MAIN INSTRUCTION
+
+I want to transform my existing game, **Mosquito Apocalypse: Bangladesh Edition**, into a polished, challenging, entertaining, high-quality 3D survival horror-comedy game.
+
+This is a major upgrade to the existing project.
+
+**Do not create a new project. Do not replace the existing game with a simplified demo. Do not just provide suggestions or code snippets. Inspect the actual project, modify the existing source code, run the application, and verify the results.**
+
+The game must maintain its existing identity:
+
+- First-person 3D survival gameplay.
+- Bangladesh-inspired environments.
+- High-quality cartoon 3D visual style.
+- Five existing weapons.
+- Three existing major bosses.
+- Six connected levels.
+- PC and mobile browser support.
+- Funny Bangladeshi dialogue and horror-comedy atmosphere.
+
+The upgrade has SEVEN main objectives:
+
+1. A simple, connected story across all six levels.
+2. Meaningful missions and objectives.
+3. Much harder but fair gameplay.
+4. New Bangladeshi slang dialogues and character personalities.
+5. Real Bangla voice acting that works on PC and mobile.
+6. Dramatically improved graphics across all six levels.
+7. Better character models, enemy AI, animations, cinematics, and overall game quality.
+
+---
+
+# PART 1 — SIMPLE AND ENTERTAINING SIX-LEVEL STORY
+
+## Main storyline
+
+Bangladesh is facing a massive mosquito apocalypse.
+
+Mosquitoes have become unusually large, aggressive, intelligent, and dangerous. They are attacking homes, rooftops, and city streets.
+
+The player is an ordinary Bangladeshi person who just wants to sleep peacefully.
+
+Unfortunately, the mosquito invasion turns his life into a nightmare.
+
+Now he must survive six increasingly dangerous levels, defeat powerful mosquito bosses, and save the city.
+
+**Keep the story simple, funny, action-focused, and easy to understand.**
+
+Do not introduce:
+- Complicated conspiracies.
+- Chemical experiments or illegal dumping mysteries.
+- Long investigations.
+- Hidden documents and excessive clues.
+- Complicated story twists.
+- Unnecessary lore or confusing backstories.
+
+The player came to kill mosquitoes, not solve a detective mystery.
+
+## LEVEL 1 — BEDROOM NIGHTMARE
+
+**Story:** The player is trying to sleep when mosquitoes suddenly invade his bedroom.
+
+Mission objectives:
+1. Survive the first mosquito attack.
+2. Find the electric mosquito racket.
+3. Search the bedroom for useful supplies.
+4. Protect yourself from the giant mosquito.
+5. Survive the final mosquito wave.
+
+Ending: The player escapes the bedroom and realizes that the entire neighborhood is under attack.
+
+## LEVEL 2 — POWER CUT
+
+**Story:** Electricity suddenly goes out. The room becomes dark, and mosquitoes become more aggressive.
+
+Mission objectives:
+1. Find the emergency flashlight.
+2. Restore electricity.
+3. Survive attacks in darkness.
+4. Eliminate the giant mosquitoes.
+5. Reach the rooftop.
+
+Ending: The player discovers that the rooftop is full of mosquitoes.
+
+## LEVEL 3 — ROOFTOP BATTLE
+
+**Story:** The player must defend the rooftop and survive a massive mosquito invasion.
+
+Mission objectives:
+1. Activate the rooftop emergency signal.
+2. Defend the rooftop.
+3. Survive multiple mosquito waves.
+4. Defeat the elite mosquito.
+5. Reach the Dengue King's territory.
+
+Ending: The Dengue King challenges the player.
+
+## LEVEL 4 — DENGUE KING
+
+**Story:** The player faces the first major mosquito boss.
+
+Mission objectives:
+1. Enter the boss arena.
+2. Survive the Dengue King's attacks.
+3. Fight through multiple boss phases.
+4. Discover and exploit the boss's weakness.
+5. Defeat the Dengue King.
+
+Ending: The player moves toward the city streets to stop the remaining mosquito invasion.
+
+## LEVEL 5 — MIDNIGHT STREET INVASION
+
+**Story:** The streets of Dhaka are filled with giant mosquitoes.
+
+Mission objectives:
+1. Survive the street invasion.
+2. Rescue trapped people.
+3. Collect useful supplies.
+4. Defeat the Midnight Mosquito.
+5. Reach the final battle location.
+
+Ending: The player prepares for the final battle.
+
+## LEVEL 6 — FINAL NIGHT
+
+**Story:** The biggest mosquito invasion begins.
+
+Mission objectives:
+1. Survive multiple waves of powerful mosquitoes.
+2. Defeat the strongest enemy groups.
+3. Face the Invisible Mosquito.
+4. Survive its final attack patterns.
+5. Defeat the final boss.
+6. Save the city.
+
+Ending: Create a satisfying victory cinematic. The mosquitoes are defeated, the city becomes peaceful again, and the player finally gets the peaceful sleep he wanted.
+
+Final dialogue example:
+
+Player: "এত কষ্ট করার পর এখন যদি একটা মশাও কামড় দেয়, আমি কিন্তু দেশ ছাইড়া চলে যামু!"
+
+## Storytelling requirements
+
+- Short level introductions.
+- Short conversations during gameplay.
+- Funny character reactions.
+- Quick boss introductions.
+- Short victory and defeat scenes.
+- Clear objectives.
+- No unnecessarily long cutscenes.
+- No confusing story progression.
+
+The player should always understand what to do next.
+
+These missions must be real playable objectives connected to gameplay events, not decorative text.
+
+---
+
+# PART 2 — MAKE THE GAME EXTREMELY CHALLENGING BUT FAIR
+
+I want one challenging default gameplay experience for everyone.
+
+Do not add Easy, Normal, or Hard mode selection.
+
+Completing the game should feel like a genuine achievement.
+
+## 2.1 Smarter mosquito AI
+
+Upgrade the existing mosquito AI.
+
+Mosquitoes should:
+
+- Attack from different directions.
+- Coordinate attacks in groups.
+- Flank the player.
+- Retreat and attack again.
+- Use different flight patterns.
+- Hide in dark corners.
+- React to player attacks.
+- Become more aggressive when the player is vulnerable.
+- Use different attack ranges and speeds.
+- Occasionally distract the player while another mosquito attacks.
+- Make unpredictable but telegraphed attacks.
+- Avoid flying directly toward the player every time.
+
+Do not simply increase enemy health.
+
+Improve their intelligence and behavior.
+
+## 2.2 Different mosquito enemy classes
+
+Create distinct enemy types:
+
+**Fast Mosquito**
+- Very fast.
+- Difficult to hit.
+- Low health.
+
+**Armored Mosquito**
+- High durability.
+- Requires strategic weapon selection.
+
+**Sneaky Mosquito**
+- Uses dark corners and unexpected angles.
+- Gives appropriate warning before attacking.
+
+**Swarm Mosquito**
+- Attacks in groups.
+- Can overwhelm careless players.
+
+**Elite Mosquito**
+- More intelligent.
+- Uses multiple attack patterns.
+- Appears in later levels.
+
+Each type needs a distinct appearance, movement style, sound, attack behavior, and animations.
+
+## 2.3 Resource management
+
+Make resources meaningful.
+
+Use existing systems to implement:
+
+- Limited insect spray.
+- Limited flashlight battery.
+- Mosquito coil duration.
+- Racket energy, if supported.
+- Limited healing items.
+- Other existing consumables.
+
+Players must think carefully before wasting resources.
+
+Balance resource availability so players can survive through skill and planning.
+
+Do not introduce systems that conflict with existing weapon or inventory mechanics.
+
+## 2.4 Weapon strategy
+
+Preserve all five existing weapons:
+
+1. Electric mosquito racket.
+2. Newspaper.
+3. Mosquito coil.
+4. Electric fan.
+5. Insect spray.
+
+Each weapon should have a meaningful use.
+
+Improve weapon switching, attack animations, hit detection, effects, and feedback.
+
+Do not make one weapon so powerful that the other four become useless.
+
+## 2.5 Boss difficulty
+
+All three bosses need multiple phases.
+
+### Dengue King
+- Heavy attacks.
+- Defensive phases.
+- Summons smaller mosquitoes.
+- Increasingly aggressive behavior.
+- Unique boss abilities.
+
+### Midnight Mosquito
+- Fast movement.
+- Darkness-based attacks.
+- Sudden repositioning.
+- Deceptive audio cues.
+- Different attack combinations.
+
+### The Invisible Mosquito
+- Difficult to detect.
+- Uses sound, environmental movement, shadows, and other clues.
+- Requires observation and timing.
+- Has a fair counterattack system.
+
+Every boss must have unique animations, sounds, attacks, weaknesses, and personality.
+
+## 2.6 Difficult missions and gameplay
+
+Make missions more challenging through:
+- Multiple objectives.
+- Limited supplies.
+- Increasing enemy waves.
+- Environmental hazards.
+- Time pressure where appropriate.
+- Strategic weapon selection.
+- Challenging boss mechanics.
+
+Do not make the game complicated just to make it difficult.
+
+## 2.7 Difficulty progression
+
+- Level 1: Learn survival mechanics.
+- Level 2: Test resource management and visibility.
+- Level 3: Test movement and crowd control.
+- Level 4: Test boss combat skills.
+- Level 5: Test exploration and prioritization.
+- Level 6: Test everything learned throughout the campaign.
+
+## Fairness rules
+
+Never use:
+- Unavoidable attacks.
+- Instant unexplained deaths.
+- Enemies spawning directly on the player.
+- Impossible objectives.
+- Unfair boss attacks.
+- Unexplained damage.
+- Random attack chains with no counterplay.
+
+The player should lose because of mistakes or poor strategy, not because the game cheats.
+
+---
+
+# PART 3 — BANGLADESHI SLANG DIALOGUES AND CHARACTER PERSONALITIES
+
+THIS IS ONE OF THE MOST IMPORTANT FEATURES.
+
+I want natural, funny, aggressive, and entertaining Bangladeshi Bangla conversations.
+
+Do not use formal textbook Bangla for every dialogue.
+
+Use natural conversational Bangla, Dhaka-style expressions, sarcasm, funny insults, mild profanity, threats, and ridiculous arguments.
+
+The game should sound like actual Bangladeshi people reacting to a mosquito apocalypse.
+
+## 3.1 PLAYER — SIGNATURE DIALOGUES
+
+**These exact two dialogues are specifically requested by me. They MUST be included without changing their wording.**
+
+<IMPORTANT PLAYER DIALOGUE 1>
+
+"ধুর শালার বেটা মশা, তোরে আমি খাইসি!"
+
+Trigger:
+- During attacks.
+- When attacking a mosquito.
+- Occasionally during intense combat.
+
+Voice:
+Angry, frustrated, funny Bangladeshi male voice.
+
+<IMPORTANT PLAYER DIALOGUE 2>
+
+"মামুর বেটা পারলে আজকে ঘুমা!"
+
+Trigger:
+- This is a mosquito's dialogue, not the player's dialogue.
+- Use it as a taunting mosquito line.
+
+Voice:
+Mischievous, teasing, irritating Bangladeshi mosquito voice.
+
+**Important: Keep the speaker assignments correct. The first line belongs to the player; the second belongs to a mosquito.**
+
+## 3.2 More player dialogue examples
+
+**During attacks:**
+- "এই ব্যাটা, দাঁড়া! আজকে তোর খবর আছে!"
+- "ধুর! আবার কামড় দিল!"
+- "আয় শালা, সামনে আয়!"
+- "একটা মশাও বাঁচতে পারবি না!"
+- "আমার ঘুমটা শেষ কইরা দিলি!"
+- "তোরে আজকে ছাড়তেছি না!"
+- "র‍্যাকেটের বাড়ি খাইয়া এবার বুঝবি!"
+
+**When missing an attack:**
+- "আরে ধুর! লাগল না কেন?"
+- "এইটা আবার কই গেল?"
+- "চোখের সামনে আছিল, হাওয়ায় মিলায় গেল!"
+- "শালা, দাঁড়া! এবার দেখাচ্ছি!"
+
+**When taking damage:**
+- "ওই! কামড় দিলি কই?"
+- "আহ! এই ব্যাটা তো আসলেই বিপদ!"
+- "আরেকটু হইলেই শেষ আছিলাম!"
+
+**When health is low:**
+- "ওরে বাবা! আরেকটু হইলেই শেষ!"
+- "এইভাবে চললে তো আমিই মশার খাবার হমু!"
+- "কেউ নাই? বাঁচাও ভাই!"
+
+**When finding items:**
+- "আহা! এইবার কিছু একটা কাজে লাগবে!"
+- "যাক বাবা, অবশেষে কিছু একটা পাইলাম!"
+- "এইটাই তো দরকার আছিল!"
+
+**When defeating a boss:**
+- "কী রে? এতক্ষণ এত ভাব দেখাচ্ছিলি!"
+- "যা, এবার আর কারও রক্ত খাইতে পারবি না!"
+- "শেষ! তোর রাজত্ব শেষ!"
+
+## 3.3 NORMAL MOSQUITO DIALOGUES
+
+Mosquitoes should mock, threaten, and irritate the player.
+
+Examples:
+- "মামুর বেটা পারলে আজকে ঘুমা!"
+- "কী হইল মামা? ধরতে পারলি না?"
+- "তোর র‍্যাকেট দেইখা ভয় পাইছি নাকি?"
+- "আজকে তোর ঘুম হারাম!"
+- "আয় আয়, আরেকটু কাছে আয়!"
+- "হাহাহা! মিস করছস আবার!"
+- "এই বাসায় আজকে আমরাই মালিক!"
+- "তোর রক্ত কিন্তু অনেক মিষ্টি!"
+- "ধরতে পারবি না রে!"
+- "ইহিহিহি! এইদিকে আয়!"
+
+## 3.4 GIANT MOSQUITO DIALOGUES
+
+Examples:
+- "মানুষ! তোর শেষ সময় ঘনাইয়া আসছে!"
+- "এই ঘর এখন আমার রাজত্ব!"
+- "তোর ওই ছোট্ট র‍্যাকেট দিয়া আমার কী করবি?"
+- "আজকে তোর ঘুমের বারোটা বাজামু!"
+- "এইবার পালানোর রাস্তা বন্ধ!"
+
+## 3.5 DENGUE KING DIALOGUES
+
+Examples:
+- "হাহাহা! আমার রাজ্যে স্বাগতম, মানুষ!"
+- "তোর রক্ত দিয়াই আমার সাম্রাজ্য চলবে!"
+- "আমার সৈন্যদের পার হইয়া আমার কাছে আইছস? সাহস তো কম না!"
+- "তুই ভাবছিস আমাকে হারানো এত সহজ?"
+
+## 3.6 MIDNIGHT MOSQUITO DIALOGUES
+
+Examples:
+- "অন্ধকারে কাউরে বিশ্বাস করা যায় না, মানুষ..."
+- "শুনতে পাচ্ছিস? আমি তোর একদম কাছেই আছি!"
+- "খুঁজে দেখ... যদি পারিস!"
+- "আলো নিভলেই আমার খেলা শুরু!"
+
+## 3.7 INVISIBLE MOSQUITO DIALOGUES
+
+Examples:
+- "আমি আছি... কিন্তু তুই দেখতে পারবি না!"
+- "এতক্ষণ কাকে মারতেছিলি, মানুষ?"
+- "হাহাহা! তোর ভয়টাই আমার শক্তি!"
+- "আমাকে খুঁজতে খুঁজতেই তোর শেষ!"
+
+## 3.8 Final victory dialogue
+
+When the player completes the final level, use a funny final exchange.
+
+Player:
+"এত কষ্ট করার পর এখন যদি একটা মশাও কামড় দেয়, আমি কিন্তু দেশ ছাইড়া চলে যামু!"
+
+Mosquito, if one survives as a post-credit joke:
+"মামা... একটু রক্ত দিয়া যান না!"
+
+Keep this as an optional comedic post-credit moment if appropriate.
+
+## 3.9 Dialogue trigger system
+
+Create dialogue triggers for:
+
+- Starting the game.
+- Entering every level.
+- Seeing a mosquito.
+- Mosquito approaching.
+- Mosquito attacking.
+- Player attacking.
+- Player missing.
+- Player taking damage.
+- Player changing weapons.
+- Running out of resources.
+- Finding an item.
+- Completing an objective.
+- Entering a dangerous area.
+- Power outage.
+- Boss introduction.
+- Boss changing phases.
+- Boss taunting the player.
+- Player defeating a boss.
+- Player dying.
+- Player completing a level.
+- Final victory.
+
+Use multiple variations for repeated situations.
+
+Do not repeat the same line too frequently.
+
+## 3.10 Dialogue quality rules
+
+- Use natural Bangladeshi conversational Bangla.
+- Preserve the exact wording of my two original dialogues.
+- Do not convert them into formal Bangla.
+- Use Bangla script in subtitles.
+- Keep lines short and entertaining.
+- Give every character a recognizable personality.
+- Do not make every line abusive.
+- Mix comedy with horror.
+- Avoid continuous unnecessary chatter.
+- Use cooldowns and contextual triggers.
+- Prevent multiple characters from speaking over each other unnecessarily.
+- Give important boss dialogue higher priority.
+
+---
+
+# PART 4 — REAL BANGLA VOICE ACTING AND AUDIO SYSTEM
+
+I want actual spoken Bangla audio, not just subtitles.
+
+## Character voice identities
+
+**Player:**
+Young Bangladeshi male voice, natural conversational Bangla, expressive, energetic, and funny.
+
+**Normal mosquitoes:**
+High-pitched, mischievous, irritating voices.
+
+**Giant mosquito:**
+Deep, aggressive, intimidating voice.
+
+**Dengue King:**
+Deep villain voice with dramatic delivery.
+
+**Midnight Mosquito:**
+Creepy, mysterious voice.
+
+**Invisible Mosquito:**
+Unsettling, deceptive voice.
+
+Every character must sound different.
+
+## Audio implementation
+
+- Use actual WAV or MP3 recordings.
+- Create or extend a reusable VoiceManager.
+- Connect each dialogue line to its correct audio asset.
+- Add random dialogue variations.
+- Add appropriate playback priorities and cooldowns.
+- Synchronize subtitles with spoken audio.
+- Add separate dialogue volume controls.
+- Keep Bangla as the default language.
+- Preserve English support if available.
+- Use positional audio where appropriate.
+
+If actual recordings are unavailable, create a complete dialogue asset manifest with unique filenames and recording instructions.
+
+Do not pretend audio recordings exist when they do not.
+
+Browser SpeechSynthesis may be used as a temporary fallback, not as a replacement for proper voice acting.
+
+## CRITICAL — FIX THE EXISTING PC AUDIO BUG
+
+A previous bug exists: character voices can be heard on mobile, but not on PC.
+
+Fix this during the upgrade.
+
+Inspect:
+- AudioContext initialization.
+- Suspended AudioContext state.
+- Browser autoplay restrictions.
+- Audio file loading and paths.
+- Audio element playback errors.
+- Gain nodes and master volume.
+- Dialogue volume.
+- Audio output connections.
+- Desktop-specific code paths.
+- Voice playback promises.
+
+Initialize audio after a genuine user interaction, such as clicking Start Game.
+
+Ensure new and existing voices work on:
+- Chrome desktop.
+- Edge desktop, where available.
+- Firefox desktop, where available.
+- Chrome Android.
+
+Do not break the working mobile audio.
+
+Do not claim desktop voice playback works without testing the actual running application.
+
+---
+
+# PART 5 — DRAMATIC GRAPHICS OVERHAUL FOR ALL SIX LEVELS
+
+THIS IS A TOP PRIORITY.
+
+The current graphics are still too low-quality and basic.
+
+I want a dramatic improvement in visual quality across ALL SIX LEVELS.
+
+Do not simply adjust colors or CSS and call it a graphics upgrade.
+
+## Target art style
+
+**High-quality stylized cartoon 3D with polished realistic details.**
+
+The game should look like a professional indie survival horror game.
+
+I want:
+- Detailed 3D environments.
+- High-quality textures.
+- Rich material details.
+- Expressive characters.
+- Smooth animations.
+- Cinematic lighting.
+- Realistic shadows.
+- Atmospheric depth.
+- Beautiful environmental composition.
+- Consistent visual quality across all six levels.
+
+Avoid:
+- Primitive low-poly environments.
+- Basic cubes used as final models.
+- Flat untextured surfaces.
+- Empty environments.
+- Cheap-looking placeholder objects.
+- Repeated generic assets.
+- Flat lighting.
+- Overly bright white environments.
+- Blurry or stretched textures.
+
+## 5.1 Level 1 — Bedroom Nightmare
+
+Create a detailed, believable Bangladeshi bedroom.
+
+Include:
+- Detailed bed and bedsheets.
+- Mosquito net with fabric appearance.
+- Wooden wardrobe.
+- Study table with books and computer accessories.
+- Ceiling fan.
+- Window with grills and curtains.
+- Wall clock and calendar.
+- Floor tiles.
+- Clothes, buckets, slippers, and household objects.
+- Detailed wall surfaces and decorations.
+
+The room must feel lived-in, not empty.
+
+## 5.2 Level 2 — Power Cut
+
+Create a visually impressive horror environment.
+
+Include:
+- Flickering lights.
+- Ceiling fan slowing down and stopping.
+- Moonlight entering through windows.
+- Realistic flashlight illumination.
+- Detailed shadows.
+- Mosquito silhouettes.
+- Dust particles.
+- Atmospheric darkness.
+- Dramatic lighting transitions.
+
+Do not use a simple black screen or black overlay as a substitute for real lighting.
+
+## 5.3 Level 3 — Rooftop Battle
+
+Create a detailed Bangladeshi rooftop.
+
+Include:
+- Concrete rooftop with surface details.
+- Water tanks.
+- Pipes.
+- Clotheslines and hanging clothes.
+- Plastic chairs.
+- Buckets and plants.
+- Antennas and satellite dishes.
+- Staircase entrance.
+- Parapet walls.
+- Nearby apartment buildings.
+- Balconies and windows.
+- Electrical cables.
+- Dhaka skyline.
+
+Use environmental depth and cinematic nighttime lighting.
+
+## 5.4 Level 4 — Dengue King Arena
+
+Create a unique and impressive boss arena.
+
+Include:
+- Detailed mosquito nest.
+- Organic environmental elements.
+- Dramatic lighting.
+- Atmospheric particles.
+- Unique boss entrance.
+- Animated environmental elements.
+- Distinctive arena architecture.
+
+The boss should look powerful and memorable.
+
+## 5.5 Level 5 — Dhaka Street
+
+Create a recognizable Bangladeshi urban street.
+
+Include:
+- Detailed roads and footpaths.
+- Rickshaws.
+- Tea stalls.
+- Grocery shops.
+- Bengali shop signs.
+- Apartment buildings.
+- Balconies.
+- Electric poles and cables.
+- Streetlights.
+- Motorcycles.
+- Posters and environmental clutter.
+- Drainage and roadside details.
+- Distant buildings and city atmosphere.
+
+The street must not look like a generic empty game road.
+
+## 5.6 Level 6 — Final Night
+
+Create the most visually impressive level.
+
+Include:
+- Cinematic final arena.
+- Dramatic sky and atmosphere.
+- Large mosquito swarm.
+- Unique final boss presentation.
+- Environmental destruction.
+- Strong particle and lighting effects.
+- Detailed surroundings.
+- Cinematic final battle.
+- Impressive victory sequence.
+
+This level must feel like the climax of the entire game.
+
+---
+
+# PART 6 — CHARACTER, WEAPON AND ANIMATION OVERHAUL
+
+Improve the appearance and animation of:
+
+- Player hands.
+- Electric mosquito racket.
+- Newspaper.
+- Mosquito coil.
+- Electric fan.
+- Insect spray.
+- Normal mosquitoes.
+- Giant mosquitoes.
+- Dengue King.
+- Midnight Mosquito.
+- Invisible Mosquito.
+
+## Weapon requirements
+
+- Proper 3D models.
+- Correct first-person camera-relative positioning.
+- Natural scale and proportions.
+- Smooth idle animations.
+- Attack animations.
+- Weapon switching animations.
+- Clear attack effects.
+- Proper hit feedback.
+
+The electric racket must not be excessively large or block the center of the screen.
+
+## Mosquito requirements
+
+Mosquitoes need:
+- Detailed body structures.
+- Animated wings.
+- Natural flight movement.
+- Different sizes and proportions.
+- Attack animations.
+- Hit reactions.
+- Death animations.
+- Unique visual identities.
+
+The bosses must look like unique characters, not enlarged copies of normal mosquitoes.
+
+---
+
+# PART 7 — ENVIRONMENTAL SOUND AND CINEMATICS
+
+Improve sound design to support the atmosphere.
+
+Include:
+- Mosquito buzzing at different distances.
+- Footsteps.
+- Weapon sounds.
+- Attack sounds.
+- Environmental ambience.
+- Ceiling fan sound.
+- Electricity and power-cut sounds.
+- Boss introduction sounds.
+- Background city ambience.
+- Victory and defeat sounds.
+
+Use sound strategically.
+
+Do not make every sound play continuously.
+
+Add short cinematic moments:
+
+**Level 1:** Player wakes up because of mosquitoes.
+
+**Level 2:** Electricity disappears, the fan stops, and a giant mosquito shadow appears.
+
+**Level 3:** The player encounters a massive rooftop swarm.
+
+**Level 4:** Dramatic Dengue King entrance.
+
+**Level 5:** The player discovers the city is overwhelmed by mosquitoes.
+
+**Level 6:** The final boss appears and the ultimate battle begins.
+
+Keep cutscenes short and interactive where possible.
+
+---
+
+# PART 8 — TECHNICAL IMPLEMENTATION AND PERFORMANCE
+
+Before editing, inspect the existing project architecture.
+
+Check:
+- Three.js renderer.
+- Scene construction.
+- Lighting and shadows.
+- Geometry and materials.
+- Texture loading.
+- Camera.
+- Character models.
+- Animations.
+- Enemy AI.
+- Collision systems.
+- Weapons.
+- Audio architecture.
+- Level progression.
+- Save system.
+- Mobile controls.
+- HUD.
+
+Fix the actual causes of low visual quality and broken audio.
+
+Use:
+- Reusable high-quality materials.
+- Proper texture maps.
+- Optimized geometry.
+- Instanced rendering where appropriate.
+- Efficient lighting and shadows.
+- Reusable environment assets.
+- Proper asset loading.
+- Level-specific lighting.
+- Efficient audio management.
+
+Maintain balanced performance on desktop and mid-range Android browsers.
+
+Do not add a graphics-quality selection menu.
+
+Do not sacrifice all visual quality for performance. Optimize intelligently.
+
+---
+
+# PART 9 — STRICT IMPLEMENTATION RULES
+
+1. Inspect the actual existing project before editing.
+2. Modify the current source code directly.
+3. Preserve all six existing levels.
+4. Preserve all five existing weapons.
+5. Preserve all three existing bosses.
+6. Preserve existing PC and mobile controls.
+7. Preserve working mobile audio.
+8. Fix desktop audio without breaking mobile audio.
+9. Preserve existing UI improvements.
+10. Do not remove working functionality.
+11. Do not replace environments with primitive placeholders.
+12. Do not use static screenshots as level backgrounds.
+13. Do not use one image as a substitute for a 3D environment.
+14. Do not make story missions decorative text.
+15. Connect dialogue to actual game events.
+16. Connect objectives to actual gameplay progression.
+17. Preserve the exact two signature Bangla dialogues.
+18. Do not falsely claim that audio recordings or assets have been created.
+
+If a feature needs external assets, identify the missing assets and integrate appropriate assets rather than pretending they exist.
+
+---
+
+# PART 10 — TESTING AND VERIFICATION
+
+Run the actual game after implementation.
+
+Test all six levels individually.
+
+Verify:
+
+**Story**
+- Level introductions.
+- Mission objectives.
+- Level completion.
+- Story continuity.
+- Final victory sequence.
+
+**Gameplay**
+- Enemy AI.
+- Weapon switching.
+- Resource consumption.
+- Player damage and healing.
+- Boss phases.
+- Difficulty progression.
+- Objective completion.
+
+**Dialogue**
+- Exact player signature dialogue.
+- Exact mosquito signature dialogue.
+- Additional player dialogue.
+- Normal mosquito dialogue.
+- Boss dialogue.
+- Dialogue variations.
+- Cooldowns.
+- Subtitles.
+
+
+
+**Audio**
+- PC voice playback.
+- Mobile voice playback.
+- Boss voice playback.
+- Audio after pause and resume.
+- Dialogue volume.
+- Audio after level transitions.
+-all the dialogues must be spoken in bangla
+# CRITICAL CORRECTION — ALL IN-GAME CHARACTER DIALOGUES MUST BE IN BANGLA
+
+I noticed that the game is still speaking English dialogue. This is NOT what I want.
+
+I want **100% Bangla spoken dialogue throughout the entire game.**
+
+## 1. Strict language rule
+
+Every character must speak Bangla in every situation.
+
+This applies to:
+- Player dialogue.
+- Normal mosquito dialogue.
+- Giant mosquito dialogue.
+- Dengue King dialogue.
+- Midnight Mosquito dialogue.
+- Invisible Mosquito dialogue.
+- Boss introductions.
+- Boss taunts.
+- Combat reactions.
+- Damage reactions.
+- Death dialogue.
+- Victory dialogue.
+- Level introductions.
+- Mission conversations.
+- Background character conversations.
+- Cutscene dialogue.
+- Random conversations.
+- All voice lines triggered during gameplay.
+
+**NO ENGLISH SPOKEN DIALOGUE. NOT EVEN ONE LINE.**
+
+Do not translate Bangla dialogue into English for voice playback.
+
+## 2. Bangla language and speaking style
+
+Use natural, conversational Bangladeshi Bangla.
+
+The dialogue should sound like real people from Bangladesh talking.
+
+Use:
+- Dhaka-style conversational expressions.
+- Natural Bangladeshi slang.
+- Funny insults.
+- Sarcasm.
+- Angry reactions.
+- Teasing and mocking.
+- Horror-style whispers.
+- Funny boss conversations.
+- Mild profanity where appropriate.
+
+Do not use overly formal, textbook, or robotic Bangla.
+
+## 3. Preserve my original dialogues exactly
+
+**Player:**
+"ধুর শালার বেটা মশা, তোরে আমি খাইসি!"
+
+**Mosquito:**
+"মামুর বেটা পারলে আজকে ঘুমা!"
+
+These two lines must remain exactly as written, with the correct speakers.
+
+## 4. Replace every existing English voice line
+
+Inspect the entire existing dialogue system and search for:
+- English dialogue strings.
+- English voice recordings.
+- English fallback dialogue.
+- English boss conversations.
+- English random dialogue.
+- English cutscene dialogue.
+- Any code that automatically selects English dialogue.
+
+Replace all spoken English dialogue with natural Bangladeshi Bangla.
+
+Do not leave old English voice lines active.
+
+## 5. Bangla voice recordings
+
+All actual voice recordings must speak Bangla.
+
+Use:
+- Bangladeshi male voice for the player.
+- Different funny Bangladeshi voices for normal mosquitoes.
+- Deep Bangla voice for giant mosquitoes and bosses.
+- Distinct personalities for every character.
+
+Do not use English voice recordings with Bangla subtitles.
+
+Do not use English SpeechSynthesis as a fallback.
+
+If a Bangla audio recording is unavailable, use an appropriate Bangla-only fallback or report the missing audio asset. Never silently play English audio.
+
+## 6. Bangla subtitles
+
+All spoken dialogue must have Bangla subtitles.
+
+Do not display English translations under the Bangla dialogue.
+
+Keep the original English game interface, menus, settings, and technical labels unchanged unless they are character dialogue or spoken narration.
+
+This language restriction applies to spoken and dialogue text, not necessarily the entire game's UI.
+
+## 7. Verify the actual result
+
+After implementation:
+
+1. Inspect every dialogue source.
+2. Check all six levels.
+3. Trigger every character's dialogue.
+4. Trigger all three boss conversations.
+5. Test random dialogue.
+6. Test level introductions and endings.
+7. Verify actual audio recordings, not just subtitle text.
+8. Test on PC and mobile.
+
+**FINAL RULE: EVERY CHARACTER MUST SPEAK ONLY BANGLA THROUGHOUT THE ENTIRE GAME. ENGLISH SPOKEN DIALOGUE IS NOT ACCEPTABLE. DO NOT JUST CHANGE SUBTITLES—FIX THE ACTUAL AUDIO AND DIALOGUE SYSTEM.**
+
+**Graphics**
+- All six environments.
+- Character models.
+- Weapon models.
+- Mosquito models.
+- Lighting and shadows.
+- Animations.
+- Environmental details.
+- Visual consistency.
+
+Test at:
+- 1920×1080 desktop.
+- 1366×768 desktop.
+- 412×915 mobile.
+- Mobile landscape.
+
+Capture actual screenshots from the running application.
+
+Provide an honest report containing:
+- Files modified.
+- New assets added.
+- Story and mission systems implemented.
+- Difficulty changes.
+- Dialogue lines added.
+- Audio assets created or still missing.
+- PC and mobile audio test results.
+- Graphics improvements for each level.
+- Actual tests performed.
+- Remaining bugs.
+
+**Do not claim something is complete just because code was generated. Verify the actual running game.**
+
+---
+
+# FINAL CREATIVE VISION
+
+I want this game to feel like a proper Bangladeshi 3D survival horror-comedy.
+
+The player should:
+- Laugh at the mosquito insults.
+- Get angry during combat.
+- Feel scared during power cuts.
+- Struggle against difficult enemy waves.
+- Enjoy unique boss fights.
+- Experience a connected but simple story.
+- Feel proud after completing the final level.
+
+The mosquitoes should have personalities, not just health bars.
+
+The player should have funny conversations with them, not just silently hit them.
+
+The game should have high-quality cartoon 3D graphics, detailed Bangladeshi environments, smooth animations, and immersive audio.
+
+**My most important requirements:**
+
+1. Dramatically improve graphics in all six levels.
+2. Make the gameplay much harder but fair.
+3. Implement the connected six-level story and real missions.
+4. Add natural Bangladeshi slang voice dialogues, including my exact two signature lines.
+5. Make actual voice audio work on both PC and mobile.
+
+**STOP PLANNING. INSPECT THE EXISTING PROJECT. MODIFY THE ACTUAL CODE. RUN THE GAME. TEST EVERY LEVEL. VERIFY THE RESULTS.**
