@@ -82,7 +82,10 @@ export default function App() {
       settings.musicVolume,
       settings.voiceVolume
     );
-    voiceManager.setVolume(settings.voiceVolume * settings.masterVolume);
+    // Voice level is applied exactly once, by soundManager's dedicated voiceGain
+    // (which feeds masterGain). Multiplying by the settings again here squared
+    // the attenuation and made dialogue inaudible on PC Chrome.
+    voiceManager.setVolume(1.0);
     voiceManager.setSubtitleCallback((line) => {
       if (settings.subtitlesEnabled) {
         setActiveVoiceLine(line);

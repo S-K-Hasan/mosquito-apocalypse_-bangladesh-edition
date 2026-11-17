@@ -84,7 +84,7 @@ const VOICE_DATABASE: Record<VoiceEventTrigger, VoiceLine[]> = {
       category: 'mosquito',
       speaker: 'Taunting Mosquito (খোঁচামারা মশা)',
       speakerBangla: 'মশা',
-      banglaText: 'মামুর বেটা পারলে আজকে ঘুমা!',
+      banglaText: 'মামুর বেটা, পারলে আজকে ঘুমা!',
       pitch: 1.65,
       rate: 1.25,
       volume: 0.9,
@@ -657,7 +657,7 @@ const VOICE_DATABASE: Record<VoiceEventTrigger, VoiceLine[]> = {
       category: 'mosquito',
       speaker: 'Mutant Mosquito',
       speakerBangla: 'রক্তচোষা মশা',
-      banglaText: 'মামুর বেটা পারলে আজকে ঘুমা!',
+      banglaText: 'মামুর বেটা, পারলে আজকে ঘুমা!',
       pitch: 1.65,
       rate: 1.25,
       volume: 0.85,
@@ -1175,7 +1175,12 @@ class VoiceManager {
   private volume: number = 1.0;
   private bengaliVoice: SpeechSynthesisVoice | null = null;
   private voicesLoaded: boolean = false;
+  private voicesInitStarted: boolean = false;
   private subtitleClearTimeoutId: number | null = null;
+  /** Guards against a stopped line's onended clearing the next line's subtitle. */
+  private playbackGeneration: number = 0;
+  /** Speech-synthesis fallback warm-up only needs to run once per session. */
+  private speechWarmupDone: boolean = false;
 
   public diagnostics: AudioDiagnosticState = {
     playerDialogueTriggerStatus: 'idle',
@@ -1221,6 +1226,8 @@ class VoiceManager {
 
   private initVoices() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (this.voicesInitStarted) return;
+    this.voicesInitStarted = true;
 
     const loadVoices = () => {
       try {
@@ -1271,17 +1278,26 @@ class VoiceManager {
    */
   public unlock() {
     soundManager.unlock();
-    this.initVoices();
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (!this.voicesLoaded) {
+      this.initVoices();
+    }
+
+    if (
+      !this.speechWarmupDone &&
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window
+    ) {
       try {
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
-        // Micro-utterance warmup
+        // Micro-utterance warm-up. Kept silent and run once; the real dialogue is
+        // always the recorded Bangla MP3, never this fallback engine.
         const warmup = new SpeechSynthesisUtterance('');
         warmup.volume = 0;
         window.speechSynthesis.speak(warmup);
+        this.speechWarmupDone = true;
       } catch {
         // Ignored
       }
@@ -1346,6 +1362,8 @@ class VoiceManager {
     if (typeof window === 'undefined') return;
 
     this.unlock();
+    this.playbackGeneration += 1;
+    const generation = this.playbackGeneration;
 
     // 1. Immediately notify subtitle component with authentic Bangla text
     if (this.subtitleClearTimeoutId) {
@@ -1389,6 +1407,9 @@ class VoiceManager {
 
     // 2. Play the native, pristine Bangla audio file through Web Audio / HTML5 Audio
     soundManager.playVoiceAudio(audioUrl, line.volume * this.volume, () => {
+      // Ignore stale callbacks from a line that was interrupted.
+      if (generation !== this.playbackGeneration) return;
+
       this.isSpeaking = false;
       this.currentPriority = 0;
       this.updateDiagnostics({
@@ -1396,7 +1417,7 @@ class VoiceManager {
       });
 
       this.subtitleClearTimeoutId = window.setTimeout(() => {
-        if (!this.isSpeaking && this.subtitleCallback) {
+        if (generation === this.playbackGeneration && !this.isSpeaking && this.subtitleCallback) {
           this.subtitleCallback(null);
         }
       }, 700);
@@ -1417,6 +1438,7 @@ class VoiceManager {
   }
 
   public stop() {
+    this.playbackGeneration += 1;
     if (this.subtitleClearTimeoutId) {
       clearTimeout(this.subtitleClearTimeoutId);
       this.subtitleClearTimeoutId = null;

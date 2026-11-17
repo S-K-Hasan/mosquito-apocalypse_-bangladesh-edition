@@ -16,9 +16,11 @@ import { soundManager } from '../systems/audio';
 import { voiceManager } from '../systems/voiceManager';
 import { ParticleSystem } from '../systems/particles';
 import { buildLevelEnvironment } from '../levels/environmentBuilder';
-import { createWeaponModel, createMosquitoModel } from '../systems/models';
+import { createWeaponModel, createMosquitoModel, WEAPON_VIEWMODEL_RIGS } from '../systems/models';
 import { MobileInputState } from './MobileControls';
 import { applyLightingPreset, LightingPresetId } from '../systems/lightingPresets';
+import { createAtmosphere } from '../systems/atmosphere';
+import { mergeStaticEnvironment } from '../systems/sceneOptimizer';
 
 interface GameCanvasProps {
   level: LevelConfig;
@@ -86,8 +88,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    soundManager.unlock();
-    voiceManager.unlock();
+    // NOTE: AudioContext is deliberately NOT unlocked here. Chrome only allows
+    // it to start inside a genuine gesture; App.tsx and the pointer handlers
+    // below handle that. Unlocking on mount produced a silent first line.
 
     // Setup software WebGL probe per directives
     const isSoftwareGl = (() => {
@@ -155,6 +158,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Build Environment
     const builtEnv = buildLevelEnvironment(level.id);
+    // Static scenery is merged by material: hundreds of prop meshes become a
+    // handful of draw calls. Animated nodes stay separate.
+    const optimizeStats = mergeStaticEnvironment(builtEnv.environmentGroup, [
+      builtEnv.ceilingFanBladeGroup,
+      builtEnv.giantMosquitoShadowMesh,
+    ]);
+    if (import.meta.env.DEV) {
+      console.log(
+        `[Perf] merged static scenery: ${optimizeStats.meshesBefore} → ${optimizeStats.meshesAfter} meshes (${optimizeStats.mergedMeshes} merged)`
+      );
+    }
     scene.add(builtEnv.environmentGroup);
     camera.position.set(builtEnv.playerStart[0], builtEnv.playerStart[1], builtEnv.playerStart[2]);
 
@@ -177,11 +191,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // Particle System
     const particles = new ParticleSystem(scene);
 
-    // Ergonomic Weapon Rig attached to Camera (Lower-Right corner, 100% center visibility)
-    // Ergonomic Weapon Rig attached to Camera (Lower-Right corner, 100% center visibility)
+    // Per-level volumetric air (dust, moonbeams, flickering practicals).
+    const atmosphere = createAtmosphere(builtEnv.atmosphere, scene);
+
+    // Ergonomic weapon rig attached to the camera. Each weapon has its own
+    // lower-right rest pose so the reticle and screen centre stay clear.
     const weaponContainer = new THREE.Group();
-    weaponContainer.position.set(0.38, -0.32, -0.48);
-    weaponContainer.rotation.set(0.08, -0.32, 0.10);
+    const initialRig = WEAPON_VIEWMODEL_RIGS[currentWeapon];
+    weaponContainer.position.set(...initialRig.position);
+    weaponContainer.rotation.set(...initialRig.rotation);
     camera.add(weaponContainer);
 
     let activeWeaponMesh: THREE.Group | null = null;
@@ -203,6 +221,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const enemies: { instance: EnemyInstance; mesh: THREE.Group }[] = [];
     const placedCoils: { data: PlacedCoil; mesh: THREE.Group }[] = [];
     let searchableContainers: SearchableContainer[] = [...builtEnv.searchables];
+
+    // Dev-only inspection hook used by automated visual/perf checks. It is
+    // compiled out of production builds and never exposed to players.
+    if (import.meta.env.DEV) {
+      (window as unknown as { __MOSQUITO_DEBUG__?: unknown }).__MOSQUITO_DEBUG__ = {
+        THREE,
+        scene,
+        camera,
+        renderer,
+        weaponContainer,
+        enemies,
+        builtEnv,
+        get activeWeaponMesh() {
+          return activeWeaponMesh;
+        },
+      };
+    }
 
     // Player Kinematics
     const playerVel = new THREE.Vector3();
@@ -294,6 +329,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const mesh = createMosquitoModel(type);
       mesh.position.set(...startPos);
       scene.add(mesh);
+
+      if (isBoss) {
+        // Cinematic materialisation: the boss swells out of the hive rather
+        // than popping into existence at full size.
+        mesh.userData.entranceT = 0;
+        mesh.scale.setScalar(0.08);
+      }
 
       let hp = 30;
       let spd = 2.4;
@@ -397,7 +439,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       soundManager.unlock();
       voiceManager.unlock();
       if (document.pointerLockElement !== renderer.domElement) {
-        renderer.domElement.requestPointerLock?.();
+        try {
+          const request = renderer.domElement.requestPointerLock?.() as
+            | Promise<void>
+            | undefined;
+          // Chrome returns a promise; a denied request must not surface as an
+          // uncaught page error (for example when the tab is not focused).
+          if (request && typeof request.catch === 'function') {
+            request.catch(() => {
+              console.warn('[Input] Pointer lock was not granted; mouse-look paused.');
+            });
+          }
+        } catch (err) {
+          console.warn('[Input] Pointer lock request failed:', err);
+        }
       }
     };
 
@@ -488,6 +543,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             soundManager.playFuseReset();
             particles.emitSparks(new THREE.Vector3(...level.fuseBoxPosition), 25, true);
             lightingRig.setPowerCutMode(false);
+            atmosphere.setPowerCut(false);
             if (level.id === 1 && builtEnv.ceilingFanBladeGroup) {
               soundManager.startCeilingFan();
             }
@@ -742,6 +798,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         mesh.position.add(knockback.clone().multiplyScalar(forceMult));
       }
 
+      // Hit reaction is read by the animation loop to make impacts land.
+      mesh.userData.hitT = instance.isBoss ? 0.28 : 0.14;
+
       if (instance.isBoss) {
         updateBossHealthHud(instance);
 
@@ -862,6 +921,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const clock = new THREE.Clock();
     let frameId = 0;
 
+    let devDiagFrame = 0;
     const tick = () => {
       if (stateRef.current.isPaused) {
         frameId = requestAnimationFrame(tick);
@@ -1019,6 +1079,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       // 4. Weapon Viewmodel Animation (Lower-Right Corner FPS positioning & dynamic animations)
       if (weaponContainer) {
         const curW = stateRef.current.currentWeapon;
+        const rig = WEAPON_VIEWMODEL_RIGS[curW];
         const switchYOffset = (1.0 - weaponSwitchProgress) * -0.35;
         const idleBreath = Math.sin(clock.getElapsedTime() * 2.2) * 0.003;
         const walkBobX = moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.007 : 0;
@@ -1031,29 +1092,83 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           const swingArc = Math.sin(prog * Math.PI);
 
           if (attackType === 'primary') {
-            // Fluid inward swat swing and quick snappy recovery
-            weaponContainer.position.set(
-              0.38 - swingArc * 0.14 + walkBobX,
-              -0.32 + switchYOffset + swingArc * 0.06 + idleBreath + walkBobY,
-              -0.48 - swingArc * 0.10
-            );
-            weaponContainer.rotation.set(
-              0.08 + swingArc * 0.45,
-              -0.32 + swingArc * 0.65,
-              0.10 - swingArc * 0.75
-            );
+            const isSwat = curW === 'racket' || curW === 'newspaper';
+            if (isSwat) {
+              // Fluid inward swat with a snappy recovery.
+              weaponContainer.position.set(
+                rig.position[0] - swingArc * 0.15 + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.07 + idleBreath + walkBobY,
+                rig.position[2] - swingArc * 0.09
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] + swingArc * 0.50,
+                rig.rotation[1] + swingArc * 0.68,
+                rig.rotation[2] - swingArc * 0.82
+              );
+            } else if (curW === 'spray') {
+              // Aerosol back-kick: small, fast, tactile.
+              weaponContainer.position.set(
+                rig.position[0] + swingArc * 0.008 + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.012 + idleBreath + walkBobY,
+                rig.position[2] + swingArc * 0.045
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] - swingArc * 0.16,
+                rig.rotation[1] + swingArc * 0.03,
+                rig.rotation[2] + swingArc * 0.05
+              );
+            } else if (curW === 'fan') {
+              // Forward shove that pushes the airflow cone toward the swarm.
+              weaponContainer.position.set(
+                rig.position[0] - swingArc * 0.03 + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.02 + idleBreath + walkBobY,
+                rig.position[2] - swingArc * 0.13
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] + swingArc * 0.28,
+                rig.rotation[1] - swingArc * 0.20,
+                rig.rotation[2] + swingArc * 0.08
+              );
+            } else {
+              // Coil underhand placement.
+              weaponContainer.position.set(
+                rig.position[0] - swingArc * 0.05 + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.11 + idleBreath + walkBobY,
+                rig.position[2] - swingArc * 0.10
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] - swingArc * 0.45,
+                rig.rotation[1] + swingArc * 0.25,
+                rig.rotation[2] + swingArc * 0.18
+              );
+            }
           } else {
-            // Secondary Special shockwave thrust (360 spin & charge thrust)
-            weaponContainer.position.set(
-              0.38 - swingArc * 0.08 + walkBobX,
-              -0.32 + switchYOffset + swingArc * 0.04 + idleBreath + walkBobY,
-              -0.48 - swingArc * 0.16
-            );
-            weaponContainer.rotation.set(
-              0.08 + swingArc * 0.30,
-              -0.32 + prog * Math.PI * 2,
-              0.10 - swingArc * 0.20
-            );
+            // Secondary special: charged 360-degree shockwave swing for the
+            // melee tools, a braced push for the placed/sprayed tools.
+            const isSpin = curW === 'racket' || curW === 'newspaper' || curW === 'fan';
+            if (isSpin) {
+              weaponContainer.position.set(
+                rig.position[0] - swingArc * 0.08 + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.04 + idleBreath + walkBobY,
+                rig.position[2] - swingArc * 0.16
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] + swingArc * 0.30,
+                rig.rotation[1] + prog * Math.PI * 2,
+                rig.rotation[2] - swingArc * 0.20
+              );
+            } else {
+              weaponContainer.position.set(
+                rig.position[0] + walkBobX,
+                rig.position[1] + switchYOffset + swingArc * 0.02 + idleBreath + walkBobY,
+                rig.position[2] - swingArc * 0.08
+              );
+              weaponContainer.rotation.set(
+                rig.rotation[0] + swingArc * 0.10,
+                rig.rotation[1] + swingArc * 0.06,
+                rig.rotation[2] + swingArc * 0.04
+              );
+            }
           }
 
           // Per-Weapon Attack Details
@@ -1088,16 +1203,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             if (airSwirl && airSwirl.material) (airSwirl.material as THREE.MeshBasicMaterial).opacity = 0;
           }
         } else {
-          // Natural idle breathing and walking bob in lower-right corner
+          // Natural idle breathing and walking bob in each weapon's rest pose.
           weaponContainer.position.set(
-            0.38 + walkBobX,
-            -0.32 + switchYOffset + idleBreath + walkBobY,
-            -0.48
+            rig.position[0] + walkBobX,
+            rig.position[1] + switchYOffset + idleBreath + walkBobY,
+            rig.position[2]
           );
           weaponContainer.rotation.set(
-            0.08 + (moveInput.lengthSq() > 0 ? Math.cos(walkBobTimer * 0.5) * 0.018 : 0),
-            -0.32 + (moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.018 : 0),
-            0.10 + (moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.014 : 0)
+            rig.rotation[0] + (moveInput.lengthSq() > 0 ? Math.cos(walkBobTimer * 0.5) * 0.018 : 0),
+            rig.rotation[1] + (moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.018 : 0),
+            rig.rotation[2] + (moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.014 : 0)
           );
         }
 
@@ -1188,6 +1303,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             soundManager.playPowerOutage();
             soundManager.stopCeilingFan();
             lightingRig.setPowerCutMode(true);
+            atmosphere.setPowerCut(true);
 
             // STEP 7: Mosquito buzzing increases & authentic Bengali reaction whisper
             voiceManager.triggerEvent('signature_powercut_whisper', true);
@@ -1313,6 +1429,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           return;
         }
 
+        // Boss entrance: ease from a small seed into full terrifying scale.
+        const entranceT = mesh.userData.entranceT as number | undefined;
+        if (entranceT !== undefined && entranceT < 1) {
+          const next = Math.min(1, entranceT + delta * 0.72);
+          mesh.userData.entranceT = next;
+          const eased = 1 - Math.pow(1 - next, 3);
+          const overshoot = 1 + Math.sin(next * Math.PI) * 0.12;
+          mesh.scale.setScalar((0.08 + eased * 0.92) * overshoot);
+        }
+
         const dist = mesh.position.distanceTo(playerPos);
         if (dist < nearestMosquitoDist) nearestMosquitoDist = dist;
 
@@ -1353,11 +1479,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           abdomen.scale.set(abPulse, abPulse, abPulse);
         }
 
+        // Unique boss secondary motion.
+        if (instance.isBoss) {
+          const thorax = mesh.getObjectByName('bossThorax');
+          if (thorax) {
+            const breathe = 1 + Math.sin(clock.getElapsedTime() * 1.7 + instance.hoverOffset) * 0.022;
+            thorax.scale.set(breathe, 1 + (breathe - 1) * 1.4, breathe);
+          }
+          const weakPoint = mesh.getObjectByName('bossWeakPoint');
+          if (weakPoint) {
+            const beat = 1 + Math.sin(clock.getElapsedTime() * 6.2) * 0.22;
+            weakPoint.scale.setScalar(beat);
+          }
+          const lantern = mesh.getObjectByName('midnightLantern');
+          if (lantern) {
+            const glowPulse = 1 + Math.sin(clock.getElapsedTime() * 3.4) * 0.25;
+            lantern.scale.setScalar(glowPulse);
+          }
+        }
+
         // Dripping venom drop animation for Dengue King
         const venomDrop = mesh.getObjectByName('venomDrop');
         if (venomDrop) {
           const dripPhase = (clock.getElapsedTime() * 2.5) % 1.0;
-          venomDrop.position.y = -0.19 * 3.8 - dripPhase * 0.07;
+          const baseY = (venomDrop.userData.baseY as number | undefined) ?? -0.19 * 3.8;
+          venomDrop.position.y = baseY - dripPhase * 0.07;
           venomDrop.scale.set(1.0 - dripPhase * 0.35, 1.0 + dripPhase * 0.55, 1.0 - dripPhase * 0.35);
         }
 
@@ -1517,6 +1663,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
 
           mesh.lookAt(playerPos.x, playerPos.y, playerPos.z);
+
+          // Impact flinch: a short recoil twist layered over the pursuit facing.
+          const hitT = (mesh.userData.hitT as number | undefined) ?? 0;
+          if (hitT > 0) {
+            mesh.userData.hitT = Math.max(0, hitT - delta);
+            const recoil = Math.sin((hitT / 0.28) * Math.PI) * (instance.isBoss ? 0.22 : 0.4);
+            mesh.rotateZ(recoil);
+            mesh.rotateX(-recoil * 0.4);
+          }
         } else {
           // In biting range! Attack player
           instance.attackCooldown -= delta;
@@ -1560,10 +1715,39 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const livingCount = enemies.filter((e) => e.instance.state !== 'dead').length;
       soundManager.updateMosquitoBuzz(livingCount, nearestMosquitoDist, isPowerCut);
 
-      // 10. Update Particles
+      // 10. Update Particles & Atmosphere
       particles.update(delta);
+      atmosphere.update(clock.getElapsedTime(), delta);
 
       renderer.render(scene, camera);
+
+      if (import.meta.env.DEV && ++devDiagFrame % 5 === 0) {
+        const diagBox = new THREE.Box3().setFromObject(weaponContainer);
+        const diagCorners: THREE.Vector3[] = [];
+        for (const bx of [diagBox.min.x, diagBox.max.x]) {
+          for (const by of [diagBox.min.y, diagBox.max.y]) {
+            for (const bz of [diagBox.min.z, diagBox.max.z]) {
+              diagCorners.push(new THREE.Vector3(bx, by, bz).project(camera));
+            }
+          }
+        }
+        const diagXs = diagCorners.map((v) => v.x);
+        const diagYs = diagCorners.map((v) => v.y);
+        document.documentElement.dataset.gameDiag = JSON.stringify({
+          calls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+          enemies: enemies.length,
+          weapon: currentRenderedWeapon,
+          centerClear: !(Math.max(...diagXs) > -0.33 && Math.min(...diagXs) < 0.33 && Math.max(...diagYs) > -0.33 && Math.min(...diagYs) < 0.33),
+          weaponNdc: {
+            minX: +Math.min(...diagXs).toFixed(2),
+            maxX: +Math.max(...diagXs).toFixed(2),
+            minY: +Math.min(...diagYs).toFixed(2),
+            maxY: +Math.max(...diagYs).toFixed(2),
+          },
+        });
+      }
+
       frameId = requestAnimationFrame(tick);
     };
 
@@ -1593,6 +1777,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       soundManager.stopAllMosquitoBuzz();
       soundManager.stopCeilingFan();
+      atmosphere.dispose();
       particles.dispose();
       renderer.dispose();
     };

@@ -41,14 +41,39 @@ export class ParticleSystem {
     this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
     this.geometry.setAttribute('size', new THREE.BufferAttribute(this.sizes, 1));
 
-    // Custom points material
-    const material = new THREE.PointsMaterial({
-      size: 0.1,
-      vertexColors: true,
+    // Per-particle size and soft round sprite. PointsMaterial ignores the size
+    // attribute, so sparks and smoke all looked identical; this shader keeps the
+    // authored sizes and gives every particle a soft circular falloff.
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uPixelRatio: { value: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2) },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        uniform float uPixelRatio;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = clamp(size * (300.0 / max(0.001, -mvPosition.z)) * uPixelRatio, 1.0, 42.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          vec2 centred = gl_PointCoord - vec2(0.5);
+          float dist = length(centred);
+          if (dist > 0.5) discard;
+          float alpha = smoothstep(0.5, 0.12, dist);
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
       transparent: true,
-      opacity: 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      depthTest: true,
     });
 
     this.pointsMesh = new THREE.Points(this.geometry, material);
@@ -131,12 +156,12 @@ export class ParticleSystem {
 
   public emitCoilSmoke(pos: THREE.Vector3) {
     if (this.particles.length >= this.maxParticles) return;
-    const col = new THREE.Color(0xdcfce7); // soft mint green smoke
+    const col = new THREE.Color(0x86efac).multiplyScalar(0.55); // soft mint smoke
     this.particles.push({
       position: pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1)),
       velocity: new THREE.Vector3((Math.random() - 0.5) * 0.1, 0.4 + Math.random() * 0.2, (Math.random() - 0.5) * 0.1),
       color: col,
-      size: 0.22,
+      size: 0.12,
       life: 2.0,
       maxLife: 2.0,
       type: 'smoke',
@@ -288,5 +313,6 @@ export class ParticleSystem {
   public dispose() {
     this.scene.remove(this.pointsMesh);
     this.geometry.dispose();
+    (this.pointsMesh.material as THREE.Material).dispose();
   }
 }

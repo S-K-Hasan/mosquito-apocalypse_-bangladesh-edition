@@ -14,8 +14,8 @@ const VOICE_LINES = [
   { id: 'p_sig_1', category: 'player', banglaText: 'ধুর শালার বেটা মশা, তোরে আমি খাইসি!' },
   
   // 2. Signature mosquito dialogue (CRITICAL TEST)
-  { id: 'm_sig_2', category: 'mosquito', banglaText: 'মামুর বেটা পারলে আজকে ঘুমা!' },
-  { id: 'm_taunt_sig', category: 'mosquito', banglaText: 'মামুর বেটা পারলে আজকে ঘুমা!' },
+  { id: 'm_sig_2', category: 'mosquito', banglaText: 'মামুর বেটা, পারলে আজকে ঘুমা!' },
+  { id: 'm_taunt_sig', category: 'mosquito', banglaText: 'মামুর বেটা, পারলে আজকে ঘুমা!' },
 
   // Player attack & miss lines
   { id: 'p_atk_sig', category: 'player', banglaText: 'ধুর শালার বেটা মশা, তোরে আমি খাইসি!' },

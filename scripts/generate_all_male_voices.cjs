@@ -1,10 +1,14 @@
 /**
- * Generator script for 100% Genuine, Natural Adult Male Bangladeshi Voices
- * Using Microsoft Neural Male Voices:
- * - bn-BD-PradeepNeural (Natural Adult Male Bangladeshi Voice)
- * - bn-IN-BashkarNeural (Natural Adult Male Bengali Boss/Villain Voice)
+ * Generator for the current PLACEHOLDER voice set.
  *
- * Replaces all 81 voice files with authentic human male performances.
+ * IMPORTANT: every file produced by this script is a Microsoft Edge neural TTS
+ * render, NOT a human studio recording:
+ * - bn-BD-PradeepNeural (adult male Bangladeshi TTS)
+ * - bn-IN-BashkarNeural (adult male Bengali TTS)
+ *
+ * Use these files for development only. For the shipping build they must be
+ * replaced by real adult male Bangladeshi voice actors. See
+ * docs/VOICE_AUDIT.md for the exact lines that need human recording.
  */
 
 const fs = require('fs');

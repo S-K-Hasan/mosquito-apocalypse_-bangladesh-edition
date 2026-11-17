@@ -15,6 +15,7 @@ class SoundSystem {
   private volumes = { master: 0.8, sfx: 0.9, ambient: 0.6, voice: 1.0 };
   private voiceBuffers: Map<string, AudioBuffer> = new Map();
   private activeVoiceSource: AudioBufferSourceNode | null = null;
+  private activeVoiceGain: GainNode | null = null;
   private activeVoiceElement: HTMLAudioElement | null = null;
 
   constructor() {
@@ -610,26 +611,61 @@ class SoundSystem {
   }
 
   /**
-   * Stop any actively playing voice line immediately without clipping.
+   * Stop any actively playing voice line with a short anti-click fade.
    */
   public stopVoiceAudio(): void {
     if (this.activeVoiceSource) {
-      try {
-        this.activeVoiceSource.stop();
-        this.activeVoiceSource.disconnect();
-      } catch {
-        // Ignored if already finished
-      }
+      const source = this.activeVoiceSource;
+      const gain = this.activeVoiceGain;
       this.activeVoiceSource = null;
+      this.activeVoiceGain = null;
+
+      // Detach the completion callback so an interrupted line can never clear the
+      // subtitle for the line that replaces it.
+      source.onended = null;
+      source.addEventListener('ended', () => {
+        try {
+          source.disconnect();
+        } catch {
+          // Already disconnected
+        }
+        try {
+          gain?.disconnect();
+        } catch {
+          // Already disconnected
+        }
+      });
+
+      const now = this.ctx ? this.ctx.currentTime : 0;
+      if (gain && this.ctx) {
+        try {
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.055);
+        } catch {
+          // Ignore automation errors on an already-disposed context
+        }
+      }
+      try {
+        source.stop(now + 0.065);
+      } catch {
+        try {
+          source.stop();
+        } catch {
+          // Ignored if already finished
+        }
+      }
     }
     if (this.activeVoiceElement) {
+      const audio = this.activeVoiceElement;
+      this.activeVoiceElement = null;
+      audio.onended = null;
       try {
-        this.activeVoiceElement.pause();
-        this.activeVoiceElement.currentTime = 0;
+        audio.pause();
+        audio.currentTime = 0;
       } catch {
         // Ignored
       }
-      this.activeVoiceElement = null;
     }
   }
 
@@ -672,7 +708,11 @@ class SoundSystem {
         source.buffer = buffer;
 
         const gainNode = this.ctx.createGain();
-        gainNode.gain.setValueAtTime(Math.max(0.1, Math.min(2.0, volume)), this.ctx.currentTime);
+        const targetGain = Math.max(0.1, Math.min(2.0, volume));
+        const startTime = this.ctx.currentTime;
+        // 20 ms fade-in prevents the speaker "pop" some Android devices produce.
+        gainNode.gain.setValueAtTime(0.0001, startTime);
+        gainNode.gain.linearRampToValueAtTime(targetGain, startTime + 0.02);
 
         source.connect(gainNode);
         if (this.voiceGain) {
@@ -682,14 +722,23 @@ class SoundSystem {
         }
 
         this.activeVoiceSource = source;
+        this.activeVoiceGain = gainNode;
+        // Only the line that is still active may report completion. This keeps
+        // subtitles, diagnostics and the speaking flag in sync when lines overlap.
         source.onended = () => {
-          if (this.activeVoiceSource === source) {
-            this.activeVoiceSource = null;
+          if (this.activeVoiceSource !== source) return;
+          this.activeVoiceSource = null;
+          this.activeVoiceGain = null;
+          try {
+            source.disconnect();
+            gainNode.disconnect();
+          } catch {
+            // Already disconnected
           }
           onEnd?.();
         };
 
-        source.start(0);
+        source.start(startTime);
         return { success: true };
       } catch (decodeErr) {
         console.warn('[AudioDiag] WebAudio buffer decode failed, trying HTMLAudio fallback:', decodeErr);
@@ -702,9 +751,8 @@ class SoundSystem {
       audio.volume = Math.max(0, Math.min(1.0, volume * this.volumes.voice * this.volumes.master));
       this.activeVoiceElement = audio;
       audio.onended = () => {
-        if (this.activeVoiceElement === audio) {
-          this.activeVoiceElement = null;
-        }
+        if (this.activeVoiceElement !== audio) return;
+        this.activeVoiceElement = null;
         onEnd?.();
       };
       await audio.play();

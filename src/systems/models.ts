@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { WeaponType, EnemyType } from '../types/game';
 import { ART_COLORS, ArtMaterials } from './artSystem';
+import {
+  createDengueKingModel,
+  createInvisibleApexModel,
+  createMidnightMosquitoModel,
+} from './bossModels';
 
 // Procedural Canvas Textures for Bangladeshi flavor
 export function createNewspaperTexture(): THREE.CanvasTexture {
@@ -800,64 +805,160 @@ export function createPlayerHandModel(isSpray = false): THREE.Group {
   const armGroup = new THREE.Group();
   armGroup.name = 'playerArmHand';
 
-  // Warm South Asian / Bengali cartoon skin material from global art system
+  // Warm South Asian / Bengali skin and blue cotton shirt from the global art system.
   const skinMat = ArtMaterials.characterSkin();
-
-  // Blue cotton shirt sleeve cuff from global art system
   const sleeveMat = ArtMaterials.fabric(0x0284c7);
+  const cuffMat = ArtMaterials.fabric(0x075985);
+  const nailMat = new THREE.MeshStandardMaterial({
+    color: 0xe9c6a4,
+    roughness: 0.42,
+    metalness: 0.0,
+  });
 
-  // Forearm sleeve coming from bottom-right corner
-  const sleeveGeo = new THREE.CylinderGeometry(0.042, 0.052, 0.22, 14);
+  // 1. Forearm sleeve rising from the bottom-right corner of the view.
+  const sleeveGeo = new THREE.CapsuleGeometry(0.043, 0.19, 6, 14);
   const sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
-  sleeve.rotation.x = Math.PI / 2.5;
-  sleeve.rotation.z = -0.22;
-  sleeve.position.set(0.05, -0.20, 0.14);
+  sleeve.rotation.x = -0.55;
+  sleeve.rotation.z = -0.14;
+  sleeve.position.set(0.072, -0.30, 0.195);
   armGroup.add(sleeve);
 
-  // Wrist
-  const wristGeo = new THREE.CylinderGeometry(0.03, 0.035, 0.10, 12);
-  const wrist = new THREE.Mesh(wristGeo, skinMat);
-  wrist.rotation.x = Math.PI / 2.5;
-  wrist.rotation.z = -0.22;
-  wrist.position.set(0.025, -0.12, 0.05);
-  armGroup.add(wrist);
+  // Folded cuff band + stitching, so the arm reads as clothing rather than a tube.
+  const cuffGeo = new THREE.TorusGeometry(0.043, 0.010, 8, 18);
+  const cuff = new THREE.Mesh(cuffGeo, cuffMat);
+  cuff.rotation.x = 1.04;
+  cuff.position.set(0.056, -0.226, 0.132);
+  armGroup.add(cuff);
 
-  // Palm
-  const palmGeo = new THREE.BoxGeometry(0.055, 0.045, 0.055);
-  const palm = new THREE.Mesh(palmGeo, skinMat);
-  palm.position.set(0.015, -0.07, -0.01);
-  palm.rotation.y = -0.15;
-  armGroup.add(palm);
-
-  // Curled Fingers wrapping handle
-  for (let f = 0; f < 4; f++) {
-    const fingerGeo = new THREE.CylinderGeometry(0.008, 0.007, 0.05, 8);
-    const finger = new THREE.Mesh(fingerGeo, skinMat);
-
-    if (isSpray && f === 3) {
-      // Index finger extended forward resting on the spray nozzle button
-      finger.name = 'sprayTriggerFinger';
-      finger.rotation.z = 0.15;
-      finger.rotation.x = -0.35;
-      finger.position.set(0.005, -0.04, 0.025);
-    } else {
-      finger.rotation.z = Math.PI / 2;
-      finger.rotation.x = 0.22;
-      finger.position.set(-0.01, -0.095 + f * 0.015, -0.01);
-    }
-    armGroup.add(finger);
+  for (let fold = 0; fold < 2; fold++) {
+    const crease = new THREE.Mesh(
+      new THREE.TorusGeometry(0.044 - fold * 0.003, 0.0035, 6, 16),
+      cuffMat
+    );
+    crease.rotation.x = -0.55 + Math.PI / 2;
+    crease.position.set(0.078 + fold * 0.005, -0.35 + fold * 0.055, 0.235 - fold * 0.04);
+    armGroup.add(crease);
   }
 
-  // Thumb
-  const thumbGeo = new THREE.CylinderGeometry(0.009, 0.008, 0.045, 8);
-  const thumb = new THREE.Mesh(thumbGeo, skinMat);
-  thumb.rotation.y = 0.6;
-  thumb.rotation.x = -0.35;
-  thumb.position.set(0.038, -0.055, 0.012);
-  armGroup.add(thumb);
+  // 2. Wrist and forearm skin bridging the cuff and the palm.
+  const wristGeo = new THREE.CapsuleGeometry(0.027, 0.085, 5, 12);
+  const wrist = new THREE.Mesh(wristGeo, skinMat);
+  wrist.rotation.x = -0.55;
+  wrist.rotation.z = -0.16;
+  wrist.position.set(0.040, -0.166, 0.077);
+  armGroup.add(wrist);
+
+  // Fine wrist crease
+  const wristCrease = new THREE.Mesh(
+    new THREE.TorusGeometry(0.027, 0.0022, 5, 14),
+    nailMat
+  );
+  wristCrease.rotation.x = -0.55 + Math.PI / 2;
+  wristCrease.position.set(0.034, -0.125, 0.051);
+  armGroup.add(wristCrease);
+
+  // 3. Palm: a soft rounded form rather than a hard box.
+  const palmGeo = new THREE.CapsuleGeometry(0.032, 0.040, 6, 12);
+  const palm = new THREE.Mesh(palmGeo, skinMat);
+  palm.scale.set(0.92, 1.0, 0.58);
+  palm.rotation.x = -0.16;
+  palm.rotation.z = -0.20;
+  palm.position.set(0.016, -0.077, 0.028);
+  armGroup.add(palm);
+
+  // Knuckle pads on the back of the hand.
+  for (let k = 0; k < 4; k++) {
+    const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.008, 7, 6), skinMat);
+    knuckle.scale.set(0.9, 0.8, 0.7);
+    knuckle.position.set(0.032, -0.108 + k * 0.0195, 0.038);
+    armGroup.add(knuckle);
+  }
+
+  // 4. Four jointed fingers curling around the vertical grip.
+  for (let f = 0; f < 4; f++) {
+    const y = -0.112 + f * 0.021;
+    const fingerRoot = new THREE.Group();
+    fingerRoot.position.set(0.033, y, 0.030);
+    fingerRoot.rotation.y = 0.72 + f * 0.035;
+
+    if (isSpray && f === 0) {
+      // Index finger extended forward onto the spray actuator.
+      fingerRoot.name = 'sprayTriggerFinger';
+      fingerRoot.rotation.set(-0.35, 0.10, 0);
+      fingerRoot.position.set(0.018, -0.052, 0.014);
+    }
+
+    const proximal = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.0078, 0.026, 4, 8),
+      skinMat
+    );
+    proximal.rotation.x = Math.PI / 2;
+    proximal.position.z = -0.014;
+    fingerRoot.add(proximal);
+
+    const distal = new THREE.Group();
+    distal.position.z = -0.030;
+    distal.rotation.y = isSpray && f === 0 ? 0.0 : 0.82;
+    const phalanx = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.0070, 0.019, 4, 8),
+      skinMat
+    );
+    phalanx.rotation.x = Math.PI / 2;
+    phalanx.position.z = -0.011;
+    distal.add(phalanx);
+
+    // Fingernail catches the light and makes the hand feel alive at close range.
+    const nail = new THREE.Mesh(new THREE.BoxGeometry(0.0095, 0.0026, 0.009), nailMat);
+    nail.position.set(0, 0.0068, -0.019);
+    nail.rotation.x = 0.12;
+    distal.add(nail);
+
+    fingerRoot.add(distal);
+    armGroup.add(fingerRoot);
+  }
+
+  // 5. Thumb crossing the grip from the inner side.
+  const thumbRoot = new THREE.Group();
+  thumbRoot.position.set(-0.004, -0.085, 0.036);
+  thumbRoot.rotation.set(0.15, -0.55, -0.65);
+  const thumbProx = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.0085, 0.026, 4, 8),
+    skinMat
+  );
+  thumbProx.position.z = -0.014;
+  thumbProx.rotation.x = Math.PI / 2;
+  thumbRoot.add(thumbProx);
+
+  const thumbTip = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.0075, 0.020, 4, 8),
+    skinMat
+  );
+  thumbTip.position.set(0, 0.002, -0.043);
+  thumbTip.rotation.set(Math.PI / 2, 0.5, 0);
+  thumbRoot.add(thumbTip);
+  armGroup.add(thumbRoot);
 
   return armGroup;
 }
+
+/**
+ * Camera-space placement for each first-person weapon. The values keep the tool
+ * in the lower-right quadrant so the reticle and screen centre stay unobstructed,
+ * while giving each object its own natural angle and working distance.
+ */
+export interface WeaponViewmodelRig {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+}
+
+export const WEAPON_VIEWMODEL_RIGS: Record<WeaponType, WeaponViewmodelRig> = {
+  racket: { position: [0.42, -0.26, -0.55], rotation: [0.12, -0.30, 0.12], scale: 0.48 },
+  newspaper: { position: [0.38, -0.21, -0.50], rotation: [0.24, -0.52, -0.08], scale: 0.35 },
+  coil: { position: [0.31, -0.20, -0.44], rotation: [0.34, -0.36, 0.02], scale: 0.36 },
+  fan: { position: [0.43, -0.24, -0.58], rotation: [0.02, -0.22, 0.05], scale: 0.38 },
+  spray: { position: [0.32, -0.16, -0.45], rotation: [0.18, -0.14, 0.04], scale: 0.42 },
+};
 
 export function createWeaponModel(type: WeaponType): THREE.Group {
   const weaponGroup = new THREE.Group();
@@ -919,19 +1020,58 @@ export function createWeaponModel(type: WeaponType): THREE.Group {
       innerRim.position.y = 0.16;
       weaponGroup.add(innerRim);
 
-      // High-voltage electric wire mesh (metal grid)
-      const meshGeo = new THREE.PlaneGeometry(0.18, 0.24);
-      const meshMat = new THREE.MeshStandardMaterial({
+      // High-voltage wire mesh: a real elliptical grid of thin lines instead of a
+      // flat triangular wireframe plane.
+      const gridPoints: THREE.Vector3[] = [];
+      const gridHalfW = 0.082;
+      const gridHalfH = 0.118;
+      for (let i = -4; i <= 4; i++) {
+        const gx = (i / 4) * gridHalfW;
+        const halfY = gridHalfH * Math.sqrt(Math.max(0, 1 - (gx / gridHalfW) ** 2));
+        gridPoints.push(new THREE.Vector3(gx, -halfY, 0), new THREE.Vector3(gx, halfY, 0));
+      }
+      for (let j = -5; j <= 5; j++) {
+        const gy = (j / 5) * gridHalfH;
+        const halfX = gridHalfW * Math.sqrt(Math.max(0, 1 - (gy / gridHalfH) ** 2));
+        gridPoints.push(new THREE.Vector3(-halfX, gy, 0), new THREE.Vector3(halfX, gy, 0));
+      }
+      const gridGeo = new THREE.BufferGeometry().setFromPoints(gridPoints);
+      const gridMat = new THREE.LineBasicMaterial({
         color: 0x93c5fd,
-        wireframe: true,
-        roughness: 0.1,
-        metalness: 0.9,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.9,
       });
-      const meshGrid = new THREE.Mesh(meshGeo, meshMat);
+      const meshGrid = new THREE.LineSegments(gridGeo, gridMat);
       meshGrid.position.y = 0.16;
+      meshGrid.position.z = 0.002;
       weaponGroup.add(meshGrid);
+
+      // Faint energised field behind the grid.
+      const fieldGeo = new THREE.CircleGeometry(1, 28);
+      fieldGeo.scale(gridHalfW, gridHalfH, 1);
+      const fieldMat = new THREE.MeshBasicMaterial({
+        color: 0x3b82f6,
+        transparent: true,
+        opacity: 0.10,
+        depthWrite: false,
+      });
+      const field = new THREE.Mesh(fieldGeo, fieldMat);
+      field.position.y = 0.16;
+      field.position.z = -0.002;
+      weaponGroup.add(field);
+
+      // Hanging wrist strap at the base of the handle.
+      const strapCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.0, -0.19, 0.01),
+        new THREE.Vector3(0.03, -0.23, 0.03),
+        new THREE.Vector3(0.01, -0.27, 0.00),
+        new THREE.Vector3(-0.02, -0.23, -0.01),
+      ]);
+      const strap = new THREE.Mesh(
+        new THREE.TubeGeometry(strapCurve, 16, 0.0035, 5, false),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 })
+      );
+      weaponGroup.add(strap);
 
       // Cartoon Electric Spark Arc Line (Flickers in render loop)
       const arcPoints = [
@@ -1038,7 +1178,9 @@ export function createWeaponModel(type: WeaponType): THREE.Group {
       weaponGroup.add(emberLight);
 
       const coilHand = createPlayerHandModel();
-      coilHand.position.set(0, -0.075, 0.02);
+      // Pull the hand toward the viewer so the fingers wrap over the near rim of
+      // the flat coil instead of hiding underneath it.
+      coilHand.position.set(0.005, -0.045, 0.15);
       weaponGroup.add(coilHand);
       break;
     }
@@ -1099,21 +1241,32 @@ export function createWeaponModel(type: WeaponType): THREE.Group {
       badge.position.set(0, 0.07, 0.02);
       weaponGroup.add(badge);
 
-      // Fan blades
+      // Fan blades: curved aerofoil shapes rather than flat boxes.
       const bladesGroup = new THREE.Group();
       bladesGroup.name = 'fanBlades';
-      const bladeMat = new THREE.MeshStandardMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.85, roughness: 0.2 });
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0x60a5fa,
+        transparent: true,
+        opacity: 0.9,
+        roughness: 0.22,
+        metalness: 0.05,
+        side: THREE.DoubleSide,
+      });
+      const bladeShape = new THREE.Shape();
+      bladeShape.moveTo(0.012, 0.004);
+      bladeShape.bezierCurveTo(0.040, 0.018, 0.058, 0.070, 0.042, 0.108);
+      bladeShape.bezierCurveTo(0.022, 0.100, 0.006, 0.052, 0.012, 0.004);
+      const bladeGeo = new THREE.ShapeGeometry(bladeShape, 10);
       for (let bl = 0; bl < 3; bl++) {
-        const bladeGeo = new THREE.BoxGeometry(0.034, 0.10, 0.005);
         const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.position.y = 0.052;
-        blade.rotation.x = 0.35;
+        blade.rotation.y = 0.30;
+        blade.position.z = 0.006;
         const pivot = new THREE.Group();
         pivot.rotation.z = (bl * 2 * Math.PI) / 3;
         pivot.add(blade);
         bladesGroup.add(pivot);
       }
-      bladesGroup.position.set(0, 0.07, 0.01);
+      bladesGroup.position.set(0, 0.07, 0.008);
       weaponGroup.add(bladesGroup);
 
       // Airflow Breeze Swirl Visual Mesh (Visible when firing/pushing)
@@ -1182,14 +1335,14 @@ export function createWeaponModel(type: WeaponType): THREE.Group {
 
       // Player hand holding the can, with index finger on the trigger!
       const sprayHand = createPlayerHandModel(true);
-      sprayHand.position.set(0, -0.03, 0.015);
+      sprayHand.position.set(0, 0.02, 0.015);
       weaponGroup.add(sprayHand);
       break;
     }
   }
 
   // Ergonomic compact viewmodel scale - keeps central screen completely clear!
-  const baseScale = type === 'fan' ? 0.35 : 0.34;
+  const baseScale = WEAPON_VIEWMODEL_RIGS[type].scale;
   weaponGroup.scale.set(baseScale, baseScale, baseScale);
   return weaponGroup;
 }
@@ -1199,6 +1352,13 @@ export function createWeaponModel(type: WeaponType): THREE.Group {
 // ==========================================
 
 export function createMosquitoModel(type: EnemyType): THREE.Group {
+  // Unique, hand-modelled bosses. They expose the same named animation nodes as
+  // the regular mosquito so GameCanvas can drive them without special cases.
+  const enemyKind = type as string;
+  if (enemyKind === 'boss_dengue') return createDengueKingModel();
+  if (enemyKind === 'boss_midnight') return createMidnightMosquitoModel();
+  if (enemyKind === 'boss_invisible') return createInvisibleApexModel();
+
   const bugGroup = new THREE.Group();
 
   let bodyScale = 1.0;
@@ -1389,12 +1549,38 @@ export function createMosquitoModel(type: EnemyType): THREE.Group {
   const wingGeo = new THREE.ShapeGeometry(wingShape);
   wingGeo.rotateX(Math.PI / 2);
 
+  // Delicate vein network inside each wing membrane (wing-local XZ plane).
+  const makeWingVeins = () => {
+    const veinPoints: THREE.Vector3[] = [];
+    const addVein = (x1: number, z1: number, x2: number, z2: number) => {
+      veinPoints.push(
+        new THREE.Vector3(x1, 0.0018, z1),
+        new THREE.Vector3(x2, 0.0018, z2)
+      );
+    };
+    const s = bodyScale;
+    addVein(0.002 * s, 0.005 * s, 0.030 * s, 0.555 * s);
+    addVein(0.008 * s, 0.12 * s, 0.062 * s, 0.30 * s);
+    addVein(0.014 * s, 0.20 * s, 0.052 * s, 0.42 * s);
+    addVein(0.019 * s, 0.28 * s, 0.040 * s, 0.52 * s);
+    addVein(0.030 * s, 0.36 * s, 0.050 * s, 0.44 * s);
+    addVein(0.042 * s, 0.46 * s, 0.024 * s, 0.52 * s);
+    const veinGeo = new THREE.BufferGeometry().setFromPoints(veinPoints);
+    const veinMat = new THREE.LineBasicMaterial({
+      color: 0x475569,
+      transparent: true,
+      opacity: 0.5,
+    });
+    return new THREE.LineSegments(veinGeo, veinMat);
+  };
+
   // Left Wing (Primary)
   const leftWingPivot = new THREE.Group();
   leftWingPivot.name = 'leftWing';
   leftWingPivot.position.set(-0.06 * bodyScale, 0.08 * bodyScale, 0);
   const leftWing = new THREE.Mesh(wingGeo, wingMat);
   leftWing.rotation.y = -Math.PI / 3;
+  leftWing.add(makeWingVeins());
   leftWingPivot.add(leftWing);
   bugGroup.add(leftWingPivot);
 
@@ -1405,6 +1591,7 @@ export function createMosquitoModel(type: EnemyType): THREE.Group {
   const rightWing = new THREE.Mesh(wingGeo, wingMat);
   rightWing.rotation.y = Math.PI / 3;
   rightWing.scale.x = -1;
+  rightWing.add(makeWingVeins());
   rightWingPivot.add(rightWing);
   bugGroup.add(rightWingPivot);
 
@@ -1455,6 +1642,25 @@ export function createMosquitoModel(type: EnemyType): THREE.Group {
       shin.position.set(side * 0.16 * bodyScale, -0.22 * bodyScale, 0);
       shin.rotation.z = side * -0.4;
       legGroup.add(shin);
+
+      // Articulated knee and hooked tarsus give the giant real insect weight.
+      if (type === 'giant') {
+        const knee = new THREE.Mesh(
+          new THREE.SphereGeometry(0.014 * bodyScale, 7, 6),
+          legMat
+        );
+        knee.position.set(side * 0.15 * bodyScale, -0.17 * bodyScale, 0);
+        legGroup.add(knee);
+
+        const tarsus = new THREE.Mesh(
+          new THREE.ConeGeometry(0.010 * bodyScale, 0.07 * bodyScale, 5),
+          legMat
+        );
+        tarsus.position.set(side * 0.20 * bodyScale, -0.35 * bodyScale, 0.01 * bodyScale);
+        tarsus.rotation.z = side * 0.55;
+        tarsus.rotation.x = -0.35;
+        legGroup.add(tarsus);
+      }
 
       // Hooked claw for Dengue King
       if (type === 'boss_dengue' && l === 0) {
@@ -2032,9 +2238,9 @@ export function createCeilingFan(): THREE.Group {
   const bladesGroup = new THREE.Group();
   bladesGroup.name = 'ceilingBlades';
   for (let b = 0; b < 3; b++) {
-    const bladeGeo = new THREE.BoxGeometry(0.14, 0.01, 1.1);
+    const bladeGeo = new THREE.BoxGeometry(0.13, 0.01, 0.9);
     const blade = new THREE.Mesh(bladeGeo, ivoryMat);
-    blade.position.z = 0.6;
+    blade.position.z = 0.49;
     blade.rotation.x = 0.1; // aerodynamic tilt
     const pivot = new THREE.Group();
     pivot.rotation.y = (b * 2 * Math.PI) / 3;

@@ -42,6 +42,36 @@ import {
 } from '../systems/models';
 import { SearchableContainer } from '../types/game';
 import { ART_COLORS, ArtMaterials } from '../systems/artSystem';
+import {
+  AtmosphereSpec,
+  FlickerSpec,
+} from '../systems/atmosphere';
+import {
+  createDetailedApartmentDoor,
+  createCorridorWindow,
+  createFluorescentFixture,
+  createCagedBulb,
+  createCorridorBench,
+  createShoeRack,
+  createGasCylinder,
+  createWaterJar,
+  createMopBucket,
+  createNoticeBoard,
+  createWallStain,
+  createRooftopCharpai,
+  createSplitACUnit,
+  createRooftopDrum,
+  createStringLights,
+  createOverheadCable,
+  createShopAwning,
+  createVegetableCart,
+  createStreetLamp,
+  createDebrisPile,
+  createBioPod,
+  createCollapsedSlab,
+  createIndustrialGenerator,
+  createBiohazardBoard,
+} from '../systems/propModels';
 
 export interface BuiltLevel {
   environmentGroup: THREE.Group;
@@ -50,8 +80,26 @@ export interface BuiltLevel {
   ceilingFanBladeGroup?: THREE.Group;
   fuseBoxMesh?: THREE.Group;
   giantMosquitoShadowMesh?: THREE.Mesh;
+  atmosphere?: AtmosphereSpec;
   spawnPoints: [number, number, number][];
   playerStart: [number, number, number];
+}
+
+/** Clone a material's texture so it can tile without mutating the shared cache. */
+function tiled(
+  material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial,
+  repeatX: number,
+  repeatY: number
+): THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
+  const clone = material.clone();
+  if (clone.map) {
+    clone.map = clone.map.clone();
+    clone.map.wrapS = THREE.RepeatWrapping;
+    clone.map.wrapT = THREE.RepeatWrapping;
+    clone.map.repeat.set(repeatX, repeatY);
+    clone.map.needsUpdate = true;
+  }
+  return clone;
 }
 
 function createDangerSignTexture(): THREE.CanvasTexture {
@@ -111,9 +159,29 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
   let giantMosquitoShadowMesh: THREE.Mesh | undefined;
   const spawnPoints: [number, number, number][] = [];
   let playerStart: [number, number, number] = [0, 1.2, 0];
+  const atmosphere: AtmosphereSpec = { motes: [], beams: [], flickers: [] };
 
   const helperBox = (minX: number, minY: number, minZ: number, maxX: number, maxY: number, maxZ: number) => {
     colliders.push(new THREE.Box3(new THREE.Vector3(minX, minY, minZ), new THREE.Vector3(maxX, maxY, maxZ)));
+  };
+
+  /** Add a practical light that the atmosphere system can flicker / black out. */
+  const practicalLight = (
+    color: number,
+    intensity: number,
+    distance: number,
+    x: number,
+    y: number,
+    z: number,
+    flicker?: Omit<FlickerSpec, 'light' | 'base'>
+  ): THREE.PointLight => {
+    const light = new THREE.PointLight(color, intensity, distance, 1.7);
+    light.position.set(x, y, z);
+    group.add(light);
+    if (flicker) {
+      atmosphere.flickers!.push({ light, base: intensity, ...flicker });
+    }
+    return light;
   };
 
   switch (levelId) {
@@ -337,87 +405,239 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
 
     case 2: {
       // LEVEL 2: LOAD SHEDDING LOCKDOWN (Dark Corridor & Fuse Room)
+      // A lived-in Dhaka apartment corridor: ceramic floor, damp plaster, tiled
+      // wainscot, real door furniture, moonlit windows and buzzing battens.
       playerStart = [0, 1.2, 6.0];
 
-      // Long hallway with concrete floor tiles
-      const hallFloor = new THREE.Mesh(
-        new THREE.PlaneGeometry(6, 20),
-        ArtMaterials.concrete(0x334155)
-      );
+      // --- Floor: stained ceramic tile with dark grout and a worn runner ----
+      const hallFloorMat = tiled(ArtMaterials.concrete(0x3c4750), 3, 10);
+      const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(6, 20), hallFloorMat);
       hallFloor.rotation.x = -Math.PI / 2;
+      hallFloor.receiveShadow = true;
       group.add(hallFloor);
 
+      const runnerMat = tiled(ArtMaterials.fabric(0x3f4a3a), 1, 6);
+      const runner = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 17.2), runnerMat);
+      runner.rotation.x = -Math.PI / 2;
+      runner.rotation.z = 0.004;
+      runner.position.set(0.05, 0.012, -0.2);
+      runner.receiveShadow = true;
+      group.add(runner);
+      // Frayed runner edges.
+      for (const side of [-1, 1]) {
+        const edge = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.05, 17.2),
+          new THREE.MeshStandardMaterial({ color: 0x8a7a4d, roughness: 0.95 })
+        );
+        edge.rotation.x = -Math.PI / 2;
+        edge.position.set(0.05 + side * 0.55, 0.014, -0.2);
+        group.add(edge);
+      }
+
+      // --- Ceiling with beams, conduit and a water stain --------------------
       const hallCeil = new THREE.Mesh(
         new THREE.PlaneGeometry(6, 20),
-        ArtMaterials.paintedWall(0x1e293b)
+        ArtMaterials.paintedWall(0x232c36)
       );
       hallCeil.rotation.x = Math.PI / 2;
       hallCeil.position.y = 3.2;
       group.add(hallCeil);
 
-      // Hallway walls
-      const hallWallMat = ArtMaterials.paintedWall(0x475569);
-      // Left Wall
-      const leftW = new THREE.Mesh(new THREE.PlaneGeometry(20, 3.2), hallWallMat);
-      leftW.rotation.y = Math.PI / 2;
-      leftW.position.set(-3.0, 1.6, 0);
-      group.add(leftW);
-      helperBox(-3.5, 0, -10, -2.8, 3.5, 10);
+      const beamMat = ArtMaterials.concrete(0x2f3842);
+      for (let b = -8; b <= 8; b += 4) {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(6, 0.16, 0.2), beamMat);
+        beam.position.set(0, 3.1, b);
+        group.add(beam);
+      }
+      const ceilingStain = new THREE.Mesh(
+        new THREE.CircleGeometry(0.85, 18),
+        new THREE.MeshStandardMaterial({
+          color: 0x596b5c,
+          transparent: true,
+          opacity: 0.35,
+          roughness: 1,
+          depthWrite: false,
+        })
+      );
+      ceilingStain.rotation.x = Math.PI / 2;
+      ceilingStain.position.set(1.2, 3.19, 3.4);
+      ceilingStain.scale.set(1.5, 0.7, 1);
+      group.add(ceilingStain);
 
-      // Right Wall
-      const rightW = new THREE.Mesh(new THREE.PlaneGeometry(20, 3.2), hallWallMat);
-      rightW.rotation.y = -Math.PI / 2;
-      rightW.position.set(3.0, 1.6, 0);
-      group.add(rightW);
-      helperBox(2.8, 0, -10, 3.5, 3.5, 10);
+      // --- Walls: two-tone paint, tiled dado, skirting and grime -------------
+      const upperWallMat = tiled(ArtMaterials.paintedWall(0x5c6a6f), 8, 1);
+      const dadoMat = tiled(ArtMaterials.concrete(0x2f4f4a), 8, 1);
+      const skirtingMat = ArtMaterials.wood(false, 0x2b1c11);
 
-      // Back Wall
-      const backW = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.2), hallWallMat);
+      const addSideWall = (side: -1 | 1) => {
+        const x = side * 3.0;
+        const upper = new THREE.Mesh(new THREE.PlaneGeometry(20, 1.72), upperWallMat);
+        upper.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        upper.position.set(x, 2.34, 0);
+        upper.receiveShadow = true;
+        group.add(upper);
+
+        const dado = new THREE.Mesh(new THREE.PlaneGeometry(20, 1.44), dadoMat);
+        dado.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        dado.position.set(x - side * 0.002, 0.72, 0);
+        dado.receiveShadow = true;
+        group.add(dado);
+
+        const dadoTrim = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.05, 20), skirtingMat);
+        dadoTrim.position.set(x - side * 0.03, 1.45, 0);
+        group.add(dadoTrim);
+
+        const skirting = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 20), skirtingMat);
+        skirting.position.set(x - side * 0.04, 0.08, 0);
+        group.add(skirting);
+
+        // Damp patches climbing from the floor.
+        for (const [z, w, h, tint] of [
+          [-7.2, 1.5, 1.9, '#22312f'],
+          [-1.6, 1.1, 1.5, '#2a3338'],
+          [5.6, 1.8, 2.1, '#1f2d2c'],
+        ] as [number, number, number, string][]) {
+          const stain = createWallStain(w, h, tint);
+          const stainMat = (stain.material as THREE.Material).clone() as THREE.MeshBasicMaterial;
+          stainMat.transparent = true;
+          stainMat.opacity = 0.65;
+          stainMat.depthWrite = false;
+          stain.material = stainMat;
+          stain.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+          stain.position.set(x - side * 0.015, h * 0.5 + 0.1, z);
+          group.add(stain);
+        }
+      };
+      addSideWall(-1);
+      addSideWall(1);
+      helperBox(-3.5, 0, -10, -2.94, 3.5, 10);
+      helperBox(2.94, 0, -10, 3.5, 3.5, 10);
+
+      // Back wall behind the player.
+      const backWallMat = tiled(ArtMaterials.paintedWall(0x5c6a6f), 3, 1);
+      const backW = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.2), backWallMat);
       backW.rotation.y = Math.PI;
       backW.position.set(0, 1.6, 10);
       group.add(backW);
-      helperBox(-3, 0, 9.8, 3, 3.5, 10.5);
+      helperBox(-3, 0, 9.94, 3, 3.5, 10.5);
 
-      // Front Far Wall (with the Main Electrical Panel)
-      const frontW = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.2), hallWallMat);
+      // The fuse wall: older, grimier concrete.
+      const frontW = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 3.2),
+        tiled(ArtMaterials.concrete(0x3d4846), 3, 1.5)
+      );
       frontW.position.set(0, 1.6, -10);
+      frontW.receiveShadow = true;
       group.add(frontW);
-      helperBox(-3, 0, -10.5, 3, 3.5, -9.8);
+      helperBox(-3, 0, -10.5, 3, 3.5, -9.94);
 
-      // Apartment Doors along the corridor (Flat 101, 102, 103)
-      const doorWood = ArtMaterials.wood(true, 0x582a12);
-      const brassKnob = ArtMaterials.metal('brass');
+      // --- Apartment doors with frames, panels, brass and Bengali numbers ---
+      const doors: Array<{ x: number; z: number; side: -1 | 1; num: string }> = [
+        { x: -2.93, z: -5.4, side: -1, num: '১০১' },
+        { x: 2.93, z: -2.6, side: 1, num: '১০২' },
+        { x: -2.93, z: 2.4, side: -1, num: '১০৩' },
+        { x: 2.93, z: 6.2, side: 1, num: '১০৪' },
+      ];
+      for (const d of doors) {
+        const door = createDetailedApartmentDoor(d.num, d.side);
+        door.position.set(d.x, 0, d.z);
+        door.rotation.y = d.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        group.add(door);
+      }
 
-      const addCorridorDoor = (x: number, z: number, isLeft: boolean, numberStr: string) => {
-        const doorGroup = new THREE.Group();
-        const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.2, 1.1), doorWood);
-        doorGroup.add(doorMesh);
-
-        // Brass handle
-        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), brassKnob);
-        handle.position.set(isLeft ? 0.04 : -0.04, 0, 0.4);
-        doorGroup.add(handle);
-
-        // Number Plate
-        const plate = new THREE.Mesh(
-          new THREE.BoxGeometry(0.02, 0.08, 0.2),
-          new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8 })
-        );
-        plate.position.set(isLeft ? 0.04 : -0.04, 0.5, 0);
-        doorGroup.add(plate);
-
-        doorGroup.position.set(x, 1.1, z);
-        group.add(doorGroup);
-      };
-
-      addCorridorDoor(-2.95, -4.0, true, '101');
-      addCorridorDoor(2.95, -1.0, false, '102');
-      addCorridorDoor(-2.95, 4.0, true, '103');
-
-      // Slippers outside flat 101
+      // Slippers outside flat 101 and a bench by 102.
       const s1 = createSlippers();
-      s1.position.set(-2.4, 0, -3.4);
+      s1.position.set(-2.45, 0, -4.35);
+      s1.rotation.y = 0.4;
       group.add(s1);
+
+      const bench = createCorridorBench();
+      bench.position.set(2.42, 0, 1.0);
+      bench.rotation.y = -Math.PI / 2;
+      group.add(bench);
+      helperBox(2.05, 0, 0.2, 2.78, 1.1, 1.8);
+
+      const shoeRack = createShoeRack();
+      shoeRack.position.set(-2.6, 0, -3.9);
+      shoeRack.rotation.y = Math.PI / 2;
+      group.add(shoeRack);
+      helperBox(-2.82, 0, -4.35, -2.35, 0.62, -3.45);
+
+      const notice = createNoticeBoard();
+      notice.position.set(2.91, 1.62, -0.5);
+      notice.rotation.y = -Math.PI / 2;
+      group.add(notice);
+
+      // --- Moonlit windows with iron grilles --------------------------------
+      const windowZs: Array<{ z: number; side: -1 | 1 }> = [
+        { z: -7.4, side: -1 },
+        { z: 5.0, side: 1 },
+      ];
+      for (const w of windowZs) {
+        const windowGroup = createCorridorWindow();
+        windowGroup.position.set(w.side * 2.95, 0, w.z);
+        windowGroup.rotation.y = w.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        group.add(windowGroup);
+
+        // Cool moonlight spilling across the corridor.
+        atmosphere.beams!.push({
+          position: [w.side * 1.35, 1.55, w.z + (w.side < 0 ? 0.35 : -0.35)],
+          rotation: [0, w.side * -0.32, w.side * 0.38],
+          width: 2.1,
+          height: 3.3,
+          color: 0x7192c9,
+          opacity: 0.20,
+          pulse: 0.7,
+        });
+        practicalLight(0x7fa6e8, 0.9, 5.5, w.side * 2.3, 1.7, w.z, {
+          style: 'bulb',
+          seed: w.z,
+        });
+      }
+
+      // --- Ceiling battens: the only warm light, and they flicker -------------
+      [-7.4, -2.4, 2.6, 7.4].forEach((zPos, i) => {
+        const fixture = createFluorescentFixture(1.45);
+        fixture.position.set(0, 3.05, zPos);
+        group.add(fixture);
+        practicalLight(0xd8efff, 2.0, 6.5, 0, 2.92, zPos, {
+          style: 'fluorescent',
+          seed: i * 9.7,
+        });
+      });
+
+      // A single caged bulb over the fuse panel with red emergency standby.
+      const caged = createCagedBulb();
+      caged.position.set(0.9, 2.55, -9.35);
+      group.add(caged);
+      practicalLight(0xffcf8a, 1.4, 4.2, 0.9, 2.35, -9.35, {
+        style: 'bulb',
+        seed: 3.2,
+      });
+      practicalLight(0xff3b30, 1.1, 3.2, -0.9, 2.6, -9.6, {
+        style: 'emergency',
+        seed: 1.4,
+        survivesPowerCut: true,
+      });
+
+      // Conduit pipes and a junction box feeding the breaker.
+      const conduitMat = ArtMaterials.metal('dark', 0x59636b);
+      for (const x of [-0.55, 0.55]) {
+        const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 19.6, 8), conduitMat);
+        conduit.rotation.x = Math.PI / 2;
+        conduit.position.set(x, 3.06, 0);
+        group.add(conduit);
+      }
+      const conduitDrop = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.9, 8), conduitMat);
+      conduitDrop.position.set(-0.55, 2.7, -9.85);
+      group.add(conduitDrop);
+
+      const junction = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.36, 0.16),
+        ArtMaterials.metal('dark', 0x4a5560)
+      );
+      junction.position.set(-1.7, 2.35, -9.88);
+      group.add(junction);
 
       // Main Fuse Box
       const fuse = createFuseBox();
@@ -434,56 +654,56 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
       dangerSignMesh.position.set(0, 2.65, -9.92);
       group.add(dangerSignMesh);
 
-      // Fluorescent tube fixtures along corridor ceiling
-      [-5, 0, 5].forEach((zPos) => {
-        const fixtureGroup = new THREE.Group();
-        const chassis = new THREE.Mesh(
-          new THREE.BoxGeometry(0.24, 0.08, 1.5),
-          ArtMaterials.metal('dark', 0x334155)
-        );
-        fixtureGroup.add(chassis);
-
-        const tube = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.025, 0.025, 1.3, 12),
-          new THREE.MeshBasicMaterial({ color: 0xfffbe6 })
-        );
-        tube.rotation.x = Math.PI / 2;
-        tube.position.y = -0.04;
-        fixtureGroup.add(tube);
-
-        fixtureGroup.position.set(0, 3.16, zPos);
-        group.add(fixtureGroup);
-      });
-
-      // Conduit metal pipe along top wall corner leading to breaker
-      const conduitMat = ArtMaterials.metal('dark', 0x64748b);
-      const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 20, 8), conduitMat);
-      conduit.rotation.x = Math.PI / 2;
-      conduit.position.set(-2.88, 3.1, 0);
-      group.add(conduit);
-
       // Wall gang switchboard near corridor entrance
       const switchboard2 = createSwitchboard();
       switchboard2.position.set(2.92, 1.4, 4.5);
       switchboard2.rotation.y = -Math.PI / 2;
       group.add(switchboard2);
 
-      // Cardboard boxes in hallway
-      const boxMat = ArtMaterials.wood(false, 0x854d0e);
-      for (let b = 0; b < 3; b++) {
-        const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), boxMat);
-        box.position.set(1.8, 0.4, -2.0 + b * 1.2);
+      // --- Clutter: gas cylinder, water jar, mop bucket, crates -------------
+      const gas = createGasCylinder();
+      gas.position.set(2.55, 0, 7.4);
+      group.add(gas);
+      helperBox(2.28, 0, 7.1, 2.82, 0.78, 7.7);
+
+      const jar = createWaterJar();
+      jar.position.set(-2.55, 0, 7.6);
+      group.add(jar);
+      helperBox(-2.82, 0, 7.33, -2.28, 0.88, 7.88);
+
+      const mop = createMopBucket();
+      mop.position.set(2.5, 0, -7.6);
+      group.add(mop);
+
+      const boxMat = ArtMaterials.wood(false, 0x6d4c2f);
+      for (let b = 0; b < 2; b++) {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.66, 0.72), boxMat);
+        box.position.set(2.15, 0.33, -1.5 - b * 0.78);
+        box.rotation.y = b * 0.18;
+        box.castShadow = true;
         group.add(box);
-        helperBox(1.3, 0, -2.5 + b * 1.2, 2.3, 0.8, -1.5 + b * 1.2);
       }
+      helperBox(1.75, 0, -2.7, 2.55, 0.66, -1.1);
 
       searchables.push({
         id: 'corridor_box',
         name: 'Storage Crate',
         banglaName: 'মালপত্রের কার্টন',
-        position: [1.8, 0.6, -2.0],
+        position: [2.15, 0.6, -1.9],
         searched: false,
         itemGiven: { type: 'ammo_spray', amount: 50, name: 'Extra HIT Spray Can' },
+      });
+
+      // --- Air: dust caught in the moonbeams and batten light ----------------
+      atmosphere.motes!.push({
+        count: 460,
+        color: 0xbcd4ee,
+        size: 0.032,
+        center: [0, 1.55, -0.5],
+        bounds: [5.4, 2.5, 18.5],
+        opacity: 0.42,
+        drift: 0.1,
+        fall: -0.018,
       });
 
       spawnPoints.push([-1.5, 2.2, -6.0]);
@@ -500,11 +720,35 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
       // 1. Concrete Rooftop Floor (Weathered slab with expansion joints)
       const roofFloor = new THREE.Mesh(
         new THREE.PlaneGeometry(24, 24),
-        ArtMaterials.concrete(0x475569)
+        tiled(ArtMaterials.concrete(0x5a6068), 4, 4)
       );
       roofFloor.rotation.x = -Math.PI / 2;
       roofFloor.receiveShadow = true;
       group.add(roofFloor);
+
+      // Expansion joints and patched repairs break up the slab.
+      const jointMat = new THREE.MeshStandardMaterial({ color: 0x2c3238, roughness: 0.95 });
+      for (let j = -8; j <= 8; j += 8) {
+        const jointX = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 23.4), jointMat);
+        jointX.rotation.x = -Math.PI / 2;
+        jointX.position.set(j, 0.006, 0);
+        group.add(jointX);
+        const jointZ = new THREE.Mesh(new THREE.PlaneGeometry(23.4, 0.06), jointMat);
+        jointZ.rotation.x = -Math.PI / 2;
+        jointZ.position.set(0, 0.006, j);
+        group.add(jointZ);
+      }
+      const patchMat = new THREE.MeshStandardMaterial({ color: 0x6b7076, roughness: 0.92 });
+      for (const [px, pz, pw, pd] of [
+        [-4.2, -6.8, 3.1, 2.2],
+        [6.0, 4.4, 2.4, 3.4],
+        [2.2, -3.1, 1.8, 1.4],
+      ] as [number, number, number, number][]) {
+        const patch = new THREE.Mesh(new THREE.PlaneGeometry(pw, pd), patchMat);
+        patch.rotation.x = -Math.PI / 2;
+        patch.position.set(px, 0.008, pz);
+        group.add(patch);
+      }
 
       // 2. Parapet Railing Walls (Red brick with smooth concrete coping)
       const parapetMat = ArtMaterials.concrete(0x991b1b);
@@ -629,7 +873,95 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
       const skyline = createDhakaCitySkyline();
       group.add(skyline);
 
-      // 14. Rooftop Mosquito Airborne Spawn Points
+      // 14. Lived-in rooftop furniture: charpai, AC unit, drums and cables
+      const charpai = createRooftopCharpai();
+      charpai.position.set(-1.7, 0, 8.6);
+      charpai.rotation.y = 0.28;
+      group.add(charpai);
+      helperBox(-2.7, 0, 7.9, -0.7, 0.6, 9.3);
+
+      const ac = createSplitACUnit();
+      ac.position.set(2.9, 0, 7.2);
+      ac.rotation.y = -0.35;
+      group.add(ac);
+      helperBox(2.35, 0, 6.85, 3.45, 1.05, 7.55);
+
+      const drum1 = createRooftopDrum();
+      drum1.position.set(7.1, 0, -2.3);
+      group.add(drum1);
+      helperBox(6.55, 0, -2.85, 7.65, 1.0, -1.75);
+
+      const drum2 = createRooftopDrum();
+      drum2.position.set(-7.5, 0, 4.4);
+      drum2.rotation.y = 0.7;
+      group.add(drum2);
+      helperBox(-8.05, 0, 3.85, -6.95, 1.0, 4.95);
+
+      // Bulb string zig-zagging over the seating corner.
+      const stringLights = createStringLights(16, 5.4);
+      stringLights.position.set(-1.8, 3.0, 4.8);
+      stringLights.rotation.y = 0.1;
+      group.add(stringLights);
+      practicalLight(0xffc169, 1.1, 6.0, -1.8, 2.6, 4.8, {
+        style: 'bulb',
+        seed: 6.5,
+      });
+
+      // Sagging neighbourhood cables crossing the rooftop sky.
+      const cableGroup = createOverheadCable(
+        new THREE.Vector3(-12.2, 5.4, -10.6),
+        new THREE.Vector3(12.2, 5.9, -8.8)
+      );
+      group.add(cableGroup);
+      const cableGroup2 = createOverheadCable(
+        new THREE.Vector3(-12.2, 6.1, 6.0),
+        new THREE.Vector3(10.5, 5.3, 11.5)
+      );
+      group.add(cableGroup2);
+
+      // Stairwell porch lamp and a weak fluorescent over the tank platform.
+      practicalLight(0xffb15c, 1.4, 5.5, -4.9, 2.55, 7.1, {
+        style: 'bulb',
+        seed: 2.1,
+      });
+      practicalLight(0x9fc5e8, 0.85, 7.0, -8.5, 2.4, -8.0, {
+        style: 'fluorescent',
+        seed: 8.8,
+      });
+
+      // Moonlight shaft across the slab.
+      atmosphere.beams!.push({
+        position: [-4.0, 2.2, -2.0],
+        rotation: [0.12, -0.5, 0.32],
+        width: 4.6,
+        height: 7.5,
+        color: 0x9db8e8,
+        opacity: 0.10,
+        pulse: 0.5,
+      });
+
+      // City dust and monsoon haze drifting across the roof.
+      atmosphere.motes!.push({
+        count: 380,
+        color: 0xffc98c,
+        size: 0.028,
+        center: [0, 2.4, 0],
+        bounds: [22, 5.0, 22],
+        opacity: 0.30,
+        drift: 0.24,
+        fall: 0.015,
+      });
+      atmosphere.motes!.push({
+        count: 140,
+        color: 0x9ec9ff,
+        size: 0.022,
+        center: [0, 4.6, 0],
+        bounds: [24, 4.0, 24],
+        opacity: 0.20,
+        drift: 0.32,
+      });
+
+      // 15. Rooftop Mosquito Airborne Spawn Points
       spawnPoints.push([-8, 3.5, -8]);
       spawnPoints.push([8, 4.0, -8]);
       spawnPoints.push([0, 4.5, -10]);
@@ -791,7 +1123,85 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
         itemGiven: { type: 'ammo_spray', amount: 45, name: 'Can of Insect Spray' },
       });
 
-      // 10. Dengue Arena Spawn Points (Boss emerges from the Hive cave portal)
+      // 10. Collapsed colonial masonry, breeding vats and warning lighting
+      const slab1 = createCollapsedSlab();
+      slab1.position.set(-10.4, 0, 7.6);
+      slab1.rotation.y = 0.55;
+      group.add(slab1);
+      helperBox(-11.9, 0, 6.0, -8.9, 0.9, 9.2);
+
+      const slab2 = createCollapsedSlab();
+      slab2.position.set(10.2, 0, -7.2);
+      slab2.rotation.y = -0.8;
+      group.add(slab2);
+      helperBox(8.7, 0, -8.8, 11.7, 0.9, -5.6);
+
+      for (const [dx, dz, rot] of [
+        [-12.6, -9.6, 0.4],
+        [12.8, 9.4, -1.1],
+        [-11.9, 11.4, 1.8],
+        [11.5, -11.2, 0.2],
+      ] as [number, number, number][]) {
+        const debris = createDebrisPile();
+        debris.position.set(dx, 0, dz);
+        debris.rotation.y = rot;
+        group.add(debris);
+      }
+
+      // Two infected breeding pods flanking the hive.
+      for (const side of [-1, 1]) {
+        const pod = createBioPod(2.0);
+        pod.position.set(side * 6.2, 0, -11.6);
+        pod.rotation.y = side * -0.25;
+        group.add(pod);
+        helperBox(side * 6.2 - 0.75, 0, -12.35, side * 6.2 + 0.75, 2.3, -10.85);
+        practicalLight(0x35d07f, 1.3, 5.5, side * 6.2, 1.5, -11.3, {
+          style: 'emergency',
+          seed: side * 4.4,
+          survivesPowerCut: true,
+        });
+      }
+
+      // Hazard lamps and a sodium work light at the archway.
+      practicalLight(0xff3b30, 1.5, 6.0, -4.2, 4.6, -8.5, {
+        style: 'neon',
+        seed: 2.7,
+        survivesPowerCut: true,
+      });
+      practicalLight(0xffb160, 1.6, 7.0, 4.5, 3.6, 9.6, {
+        style: 'bulb',
+        seed: 5.1,
+      });
+      practicalLight(0x54e0a0, 1.2, 8.0, -3.5, 0.7, -2.5, {
+        style: 'emergency',
+        seed: 1.9,
+        survivesPowerCut: true,
+      });
+
+      // Moonlight cutting through monsoon cloud above the courtyard.
+      atmosphere.beams!.push({
+        position: [-2.5, 3.4, 2.0],
+        rotation: [0.16, 0.3, -0.24],
+        width: 5.0,
+        height: 8.5,
+        color: 0x7f9fd0,
+        opacity: 0.10,
+        pulse: 0.45,
+      });
+
+      // Stagnant, spore-heavy air.
+      atmosphere.motes!.push({
+        count: 520,
+        color: 0x8fbf8a,
+        size: 0.038,
+        center: [0, 2.0, 0],
+        bounds: [30, 5.5, 30],
+        opacity: 0.30,
+        drift: 0.13,
+        fall: -0.012,
+      });
+
+      // 11. Dengue Arena Spawn Points (Boss emerges from the Hive cave portal)
       spawnPoints.push([0, 3.4, -9.0]); // Emerging from Hive
       spawnPoints.push([-4, 3.2, -3]);
       spawnPoints.push([4, 3.2, 1]);
@@ -1008,7 +1418,146 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
       posters2.rotation.y = -Math.PI / 2;
       group.add(posters2);
 
-      // 10. Street Mosquito Spawn Points (Tactical alleyways & rooftops)
+      // 10. Street furniture, lamps and the tangle of Dhaka overhead cables
+      const lamp1 = createStreetLamp(5.8);
+      lamp1.position.set(-5.6, 0.24, -6.6);
+      lamp1.rotation.y = Math.PI / 2;
+      group.add(lamp1);
+      helperBox(-5.82, 0, -6.85, -5.38, 5.9, -6.35);
+      practicalLight(0xffb35e, 2.6, 11.0, -4.7, 5.65, -6.6, {
+        style: 'fluorescent',
+        seed: 3.3,
+      });
+      atmosphere.beams!.push({
+        position: [-4.85, 3.1, -6.6],
+        rotation: [0, 0, 0.09],
+        width: 2.6,
+        height: 5.6,
+        color: 0xffbe73,
+        opacity: 0.16,
+        pulse: 1.1,
+      });
+
+      const lamp2 = createStreetLamp(5.5);
+      lamp2.position.set(5.6, 0.24, 5.2);
+      lamp2.rotation.y = -Math.PI / 2;
+      group.add(lamp2);
+      helperBox(5.38, 0, 4.95, 5.82, 5.6, 5.45);
+      practicalLight(0xffa94d, 2.2, 10.0, 4.7, 5.35, 5.2, {
+        style: 'fluorescent',
+        seed: 7.6,
+      });
+      atmosphere.beams!.push({
+        position: [4.85, 2.9, 5.2],
+        rotation: [0, 0, -0.08],
+        width: 2.4,
+        height: 5.2,
+        color: 0xffb066,
+        opacity: 0.14,
+        pulse: 0.9,
+      });
+
+      // Striped shop awnings.
+      const awning1 = createShopAwning(2.8, 1.25, 0xb91c1c, 0xf5f0e1);
+      awning1.position.set(-5.92, 2.75, -8.2);
+      awning1.rotation.y = Math.PI / 2;
+      group.add(awning1);
+
+      const awning2 = createShopAwning(3.0, 1.3, 0x1d4ed8, 0xf5f0e1);
+      awning2.position.set(5.92, 2.9, 8.2);
+      awning2.rotation.y = -Math.PI / 2;
+      group.add(awning2);
+
+      // Street vendor cart resting by the kerb.
+      const cart = createVegetableCart();
+      cart.position.set(-4.45, 0.24, 2.2);
+      cart.rotation.y = 0.22;
+      group.add(cart);
+      helperBox(-5.35, 0, 1.35, -3.55, 1.15, 3.05);
+
+      // Debris and monsoon puddles against the gutters.
+      const streetDebris = createDebrisPile();
+      streetDebris.position.set(4.9, 0.22, -9.6);
+      streetDebris.rotation.y = 0.6;
+      group.add(streetDebris);
+
+      const puddleMat = new THREE.MeshPhysicalMaterial({
+        color: 0x18212c,
+        roughness: 0.05,
+        metalness: 0.35,
+        transparent: true,
+        opacity: 0.68,
+        clearcoat: 1,
+        clearcoatRoughness: 0.03,
+      });
+      for (const [px, pz, pr] of [
+        [-4.1, -1.8, 1.25],
+        [2.8, 6.4, 1.7],
+        [4.6, -6.2, 1.0],
+        [-2.2, 9.4, 1.4],
+      ] as [number, number, number][]) {
+        const puddle = new THREE.Mesh(new THREE.CircleGeometry(pr, 20), puddleMat);
+        puddle.rotation.x = -Math.PI / 2;
+        puddle.position.set(px, 0.028, pz);
+        puddle.scale.z = 0.62;
+        group.add(puddle);
+      }
+
+      // Cables strung from pole to pole and across to the apartments.
+      group.add(createOverheadCable(
+        new THREE.Vector3(-5.8, 7.8, 7.5),
+        new THREE.Vector3(5.8, 7.4, -4.5)
+      ));
+      group.add(createOverheadCable(
+        new THREE.Vector3(-5.9, 7.2, 7.2),
+        new THREE.Vector3(-10.1, 8.4, -6.0)
+      ));
+      group.add(createOverheadCable(
+        new THREE.Vector3(5.9, 7.0, -4.8),
+        new THREE.Vector3(10.1, 8.6, 7.0)
+      ));
+
+      const partyLights = createStringLights(18, 7.2);
+      partyLights.position.set(0, 5.4, -1.5);
+      partyLights.rotation.y = Math.PI / 2;
+      group.add(partyLights);
+
+      // Warm shop interiors and a buzzing sign.
+      practicalLight(0xffc06a, 1.7, 7.0, -5.6, 2.2, -8.2, {
+        style: 'bulb',
+        seed: 4.2,
+      });
+      practicalLight(0x60a5fa, 1.3, 6.0, 5.7, 2.5, 8.2, {
+        style: 'neon',
+        seed: 9.1,
+      });
+      practicalLight(0xff8a4c, 1.5, 5.5, -4.9, 1.9, -0.6, {
+        style: 'bulb',
+        seed: 1.3,
+      });
+
+      // Exhaust haze, road dust and insects around the lamps.
+      atmosphere.motes!.push({
+        count: 470,
+        color: 0xffc58c,
+        size: 0.034,
+        center: [0, 2.4, 0],
+        bounds: [10, 5.0, 34],
+        opacity: 0.30,
+        drift: 0.2,
+        fall: 0.02,
+      });
+      atmosphere.motes!.push({
+        count: 160,
+        color: 0xd7e6ff,
+        size: 0.024,
+        center: [0, 4.6, 0],
+        bounds: [12, 3.5, 30],
+        opacity: 0.18,
+        drift: 0.34,
+      });
+
+      // 11. Street Mosquito Spawn Points (Tactical alleyways & rooftops)
       spawnPoints.push([-3.5, 3.0, -8.0]);
       spawnPoints.push([3.5, 3.2, -7.0]);
       spawnPoints.push([0.0, 4.2, 0.0]);
@@ -1107,6 +1656,98 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
       const beaconLight = new THREE.PointLight(0xef4444, 1.8, 12.0);
       beaconLight.position.set(-8.0, 4.8, 7.0);
       group.add(beaconLight);
+      atmosphere.flickers!.push({
+        light: beaconLight,
+        base: 1.8,
+        style: 'emergency',
+        seed: 1.1,
+        survivesPowerCut: true,
+      });
+
+      // 4b. Mutation lab machinery ringing the arena.
+      const generator = createIndustrialGenerator();
+      generator.position.set(11.2, 0, 10.6);
+      generator.rotation.y = -0.65;
+      group.add(generator);
+      helperBox(10.2, 0, 9.6, 12.2, 1.1, 11.6);
+      practicalLight(0xff5a3c, 1.4, 7.0, 11.2, 1.6, 10.6, {
+        style: 'neon',
+        seed: 6.3,
+        survivesPowerCut: true,
+      });
+
+      for (const side of [-1, 1]) {
+        const pod = createBioPod(2.7);
+        pod.position.set(side * 10.8, 0, -1.8);
+        pod.rotation.y = side * -0.3;
+        group.add(pod);
+        helperBox(side * 10.8 - 0.8, 0, -2.6, side * 10.8 + 0.8, 3.1, -1.0);
+        practicalLight(0x2dd4bf, 1.5, 6.5, side * 10.8, 1.7, -1.4, {
+          style: 'emergency',
+          seed: side * 2.8,
+          survivesPowerCut: true,
+        });
+      }
+
+      const slabA = createCollapsedSlab();
+      slabA.position.set(-11.6, 0, -10.4);
+      slabA.rotation.y = 0.5;
+      group.add(slabA);
+      const slabB = createCollapsedSlab();
+      slabB.position.set(11.4, 0, -10.0);
+      slabB.rotation.y = -0.7;
+      group.add(slabB);
+
+      const hazardBoard = createBiohazardBoard();
+      hazardBoard.position.set(-3.0, 2.6, -12.4);
+      group.add(hazardBoard);
+
+      for (const [dx, dz] of [[-13.2, 2.0], [13.4, 2.6], [-2.0, -13.4], [8.0, 12.6]] as [number, number][]) {
+        const debris = createDebrisPile();
+        debris.position.set(dx, 0, dz);
+        group.add(debris);
+      }
+
+      // Dramatic shafts from the lab ceiling penetrations.
+      atmosphere.beams!.push({
+        position: [-3.6, 4.0, -2.0],
+        rotation: [0.1, 0.25, -0.3],
+        width: 4.2,
+        height: 9.5,
+        color: 0x34d399,
+        opacity: 0.10,
+        pulse: 0.35,
+      });
+      atmosphere.beams!.push({
+        position: [4.2, 4.2, 3.0],
+        rotation: [0.14, -0.35, 0.26],
+        width: 3.8,
+        height: 9.0,
+        color: 0xa855f7,
+        opacity: 0.08,
+        pulse: 0.28,
+      });
+
+      // Spore-laden cavern air (spore puffs are added by GameCanvas).
+      atmosphere.motes!.push({
+        count: 620,
+        color: 0x5eead4,
+        size: 0.042,
+        center: [0, 2.4, 0],
+        bounds: [34, 6.5, 34],
+        opacity: 0.32,
+        drift: 0.16,
+        fall: -0.01,
+      });
+      atmosphere.motes!.push({
+        count: 220,
+        color: 0xc084fc,
+        size: 0.03,
+        center: [0, 4.0, 0],
+        bounds: [32, 5.0, 32],
+        opacity: 0.18,
+        drift: 0.24,
+      });
 
       // 5. Final Apex Mutant Boss Arena Spawn Points
       spawnPoints.push([0.0, 4.5, -4.5]); // Directly emerging from Master Hive Core!
@@ -1126,6 +1767,7 @@ export function buildLevelEnvironment(levelId: number): BuiltLevel {
     ceilingFanBladeGroup,
     fuseBoxMesh,
     giantMosquitoShadowMesh,
+    atmosphere,
     spawnPoints,
     playerStart,
   };
