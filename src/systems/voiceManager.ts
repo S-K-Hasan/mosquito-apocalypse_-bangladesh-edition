@@ -1377,7 +1377,9 @@ class VoiceManager {
     this.isSpeaking = true;
     this.currentPriority = line.priority;
 
-    const audioUrl = `/audio/voices/${line.id}.mp3`;
+    // Public files live under Vite's base path when the game is hosted in a
+    // subdirectory (GitHub Pages project site), so never hard-code a leading /.
+    const audioUrl = `${import.meta.env.BASE_URL}audio/voices/${line.id}.mp3`;
 
     this.updateDiagnostics({
       playerDialogueTriggerStatus: `Triggered (${line.id})`,

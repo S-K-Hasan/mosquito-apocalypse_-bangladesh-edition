@@ -265,7 +265,7 @@ export const HUD: React.FC<HUDProps> = ({
             <div className="flex justify-between items-center py-0.5 border-b border-slate-800/60">
               <span className="text-slate-400">Selected Audio File:</span>
               <span className="font-bold text-cyan-300 truncate max-w-[170px]" title={diagState.selectedAudioFilename || 'None'}>
-                {diagState.selectedAudioFilename ? diagState.selectedAudioFilename.replace('/audio/voices/', '') : 'None'}
+                {diagState.selectedAudioFilename ? diagState.selectedAudioFilename.replace(/^.*\/audio\/voices\//, '') : 'None'}
               </span>
             </div>
 

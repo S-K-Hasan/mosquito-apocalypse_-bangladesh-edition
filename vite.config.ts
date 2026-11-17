@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Served from https://s-k-hasan.github.io/mosquito-apocalypse_-bangladesh-edition/
+    // Vite rewrites every bundled asset URL and import.meta.env.BASE_URL from this.
+    base: '/mosquito-apocalypse_-bangladesh-edition/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
