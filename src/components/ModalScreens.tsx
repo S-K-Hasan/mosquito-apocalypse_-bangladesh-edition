@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Play, RotateCcw, Home, Skull, CheckCircle } from 'lucide-react';
 import { soundManager } from '../systems/audio';
 import { voiceManager } from '../systems/voiceManager';
+import { FullscreenButton } from './FullscreenButton';
 
 interface PauseMenuProps {
   onResume: () => void;
@@ -12,8 +13,8 @@ interface PauseMenuProps {
 
 export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onMainMenu }) => {
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 select-none">
-      <div className="bg-[#121620] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl flex flex-col gap-3">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 select-none overflow-y-auto">
+      <div className="bg-[#121620] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl flex flex-col gap-3 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 mx-auto flex items-center justify-center mb-1">
           <span className="text-xl">⏸️</span>
         </div>
@@ -50,6 +51,8 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onMai
         >
           <Home className="w-4 h-4" /> MAIN MENU (মূল মেনু)
         </button>
+
+        <FullscreenButton variant="pause" />
       </div>
     </div>
   );

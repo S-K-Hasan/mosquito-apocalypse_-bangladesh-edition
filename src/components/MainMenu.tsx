@@ -3,6 +3,7 @@ import { LevelConfig, Achievement, GameSettings } from '../types/game';
 import { GAME_LEVELS } from '../levels/levelData';
 import { soundManager } from '../systems/audio';
 import { voiceManager } from '../systems/voiceManager';
+import { FullscreenButton } from './FullscreenButton';
 import {
   Play,
   Grid,
@@ -142,7 +143,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-h-screen flex flex-col justify-between overflow-x-hidden select-none bg-[#0a0d14] text-white">
+    <div className="menu-safe relative flex h-full w-full flex-col justify-between overflow-y-auto overflow-x-hidden select-none bg-[#0a0d14] text-white">
+      <FullscreenButton variant="menu" />
+
       {/* BACKGROUND KEY ART (Reference 4: Dhaka night street, tea stall, giant mosquito silhouette) */}
       <div className="absolute inset-0 pointer-events-none z-0">
         {/* Sky gradient */}

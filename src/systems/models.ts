@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { WeaponType, EnemyType } from '../types/game';
 import { ART_COLORS, ArtMaterials } from './artSystem';
 import {
@@ -6,6 +7,91 @@ import {
   createInvisibleApexModel,
   createMidnightMosquitoModel,
 } from './bossModels';
+
+/**
+ * Batch static sibling meshes inside an enemy template.
+ *
+ * A mosquito is built from ~28 small meshes (four abdomen stripes, six two-part
+ * legs, two eyes plus highlights, ...). Each mesh is a draw call, and a boss
+ * wave can contain a dozen enemies at once. The animated nodes (wings, legs,
+ * abdomen, boss weak points) are groups whose names GameCanvas drives, so only
+ * unnamed leaf meshes that share an opaque material are baked together. This is
+ * purely a rendering optimisation: geometry, materials, animation and scale are
+ * unchanged.
+ */
+const DEEP_MERGE_GROUPS = new Set(['leftLegs', 'rightLegs', 'abdomen']);
+
+export function optimizeModelDrawCalls(root: THREE.Object3D) {
+  const bakeMatrix = new THREE.Matrix4();
+  const inverseParent = new THREE.Matrix4();
+
+  const mergeCandidates = (parent: THREE.Object3D, candidates: THREE.Mesh[]) => {
+    if (candidates.length < 2) return;
+
+    parent.updateWorldMatrix(true, true);
+    inverseParent.copy(parent.matrixWorld).invert();
+
+    const byMaterial = new Map<THREE.Material, THREE.Mesh[]>();
+    for (const mesh of candidates) {
+      if (!mesh.isMesh || mesh.name || mesh.children.length > 0) continue;
+      const material = mesh.material;
+      if (!material || Array.isArray(material)) continue;
+      if ((material as THREE.Material).transparent) continue;
+      const bucket = byMaterial.get(material as THREE.Material);
+      if (bucket) bucket.push(mesh);
+      else byMaterial.set(material as THREE.Material, [mesh]);
+    }
+
+    for (const [material, meshes] of byMaterial) {
+      if (meshes.length < 2) continue;
+
+      const geometries: THREE.BufferGeometry[] = [];
+      for (const mesh of meshes) {
+        mesh.updateWorldMatrix(true, false);
+        const geometry = mesh.geometry.clone();
+        bakeMatrix.multiplyMatrices(inverseParent, mesh.matrixWorld);
+        geometry.applyMatrix4(bakeMatrix);
+        geometries.push(geometry);
+      }
+
+      const merged = mergeGeometries(geometries, false);
+      for (const geometry of geometries) geometry.dispose();
+      if (!merged) continue;
+
+      merged.computeBoundingSphere();
+      const mergedMesh = new THREE.Mesh(merged, material);
+      mergedMesh.castShadow = meshes.some((mesh) => mesh.castShadow);
+      mergedMesh.receiveShadow = meshes.some((mesh) => mesh.receiveShadow);
+      mergedMesh.frustumCulled = true;
+
+      for (const mesh of meshes) mesh.parent?.remove(mesh);
+      parent.add(mergedMesh);
+    }
+  };
+
+  const visit = (node: THREE.Object3D) => {
+    for (const child of [...node.children]) {
+      if ((child as THREE.Group).isGroup) visit(child);
+    }
+
+    let candidates = node.children.filter(
+      (child) => (child as THREE.Mesh).isMesh
+    ) as THREE.Mesh[];
+
+    if (node.name && DEEP_MERGE_GROUPS.has(node.name)) {
+      const deep: THREE.Mesh[] = [];
+      node.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh !== node && mesh.isMesh) deep.push(mesh);
+      });
+      candidates = deep;
+    }
+
+    mergeCandidates(node, candidates);
+  };
+
+  visit(root);
+}
 
 // Procedural Canvas Textures for Bangladeshi flavor
 export function createNewspaperTexture(): THREE.CanvasTexture {

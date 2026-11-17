@@ -7,6 +7,8 @@ import {
 import { INITIAL_WEAPONS } from '../systems/weapons';
 import { voiceManager, VoiceLine, AudioDiagnosticState } from '../systems/voiceManager';
 import { soundManager } from '../systems/audio';
+import { FullscreenButton } from './FullscreenButton';
+import { isTouchDevice as detectTouchDevice } from '../utils/device';
 import {
   Heart,
   Zap,
@@ -56,69 +58,95 @@ export const HUD: React.FC<HUDProps> = ({
   interactionPrompt,
   onPause,
 }) => {
-  const [isObjectivesCollapsed, setIsObjectivesCollapsed] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isObjectivesCollapsed, setIsObjectivesCollapsed] = useState<boolean>(() => detectTouchDevice());
+  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(() => detectTouchDevice());
   const [showAudioDiag, setShowAudioDiag] = useState(false);
   const [diagState, setDiagState] = useState<AudioDiagnosticState>(() => voiceManager.getDiagnostics());
   const curWeaponData = INITIAL_WEAPONS[currentWeapon];
 
   useEffect(() => {
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    setIsTouchDevice(isTouch);
+    setIsTouchDevice(detectTouchDevice());
+  }, []);
 
+  // The audio panel refreshed React state four times a second even while it was
+  // closed. Poll only when the panel is actually visible.
+  useEffect(() => {
+    if (!showAudioDiag) return;
+    setDiagState(voiceManager.getDiagnostics());
     const timer = setInterval(() => {
       setDiagState(voiceManager.getDiagnostics());
     }, 250);
     return () => clearInterval(timer);
-  }, []);
+  }, [showAudioDiag]);
+
+  // A boss bar / power-cut banner occupies the top-centre strip. Collapse the
+  // long objectives list on touch so the two can never overlap.
+  useEffect(() => {
+    if (isTouchDevice && (bossInfo || isPowerCut)) {
+      setIsObjectivesCollapsed(true);
+    }
+  }, [bossInfo, isPowerCut, isTouchDevice]);
 
   const healthPercent = Math.max(0, Math.min(100, (playerStats.health / playerStats.maxHealth) * 100));
   const staminaPercent = Math.max(0, Math.min(100, (playerStats.stamina / playerStats.maxStamina) * 100));
 
   const completedCount = level.objectives.filter((o) => o.completed).length;
+  const nextObjective = level.objectives.find((o) => !o.completed);
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none flex flex-col justify-between p-3 sm:p-4 z-20 overflow-hidden font-sans">
+    <div className="absolute inset-0 pointer-events-none select-none flex flex-col justify-between hud-safe z-40 overflow-hidden font-sans">
       {/* ======================================================== */}
       {/* TOP ROW: Compact Mission Badge (Left) | Boss/Alert | Top-Right Pill */}
       {/* ======================================================== */}
       <div className="flex items-start justify-between w-full gap-2">
-        {/* TOP LEFT: Compact Mission Badge (Reference Sheet Panel 2) */}
-        <div className="bg-[#121620]/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-3 max-w-[260px] sm:max-w-[290px] shadow-2xl pointer-events-auto transition-all">
-          <div className="flex items-center justify-between gap-2 mb-0.5">
-            <div className="flex items-center gap-2">
-              <span className="bg-red-600 text-white font-game text-[11px] px-2 py-0.5 rounded-md tracking-wider font-bold shadow-sm">
+        {/* TOP LEFT: Compact Mission Badge + touch health/energy readout */}
+        <div className="flex min-w-0 max-w-[48vw] flex-col items-start gap-1.5 sm:max-w-[290px]">
+        <div className="w-full bg-[#121620]/95 backdrop-blur-md border border-slate-700/80 rounded-xl sm:rounded-2xl p-2 sm:p-3 min-w-0 shadow-2xl pointer-events-auto transition-all">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-0.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="bg-red-600 text-white font-game text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md tracking-wider font-bold shadow-sm shrink-0">
                 Lv. {level.id}
               </span>
-              <span className="font-bold text-xs sm:text-sm text-white tracking-tight truncate">
+              <span className="font-bold text-[11px] sm:text-sm text-white tracking-tight truncate">
                 {level.title}
               </span>
             </div>
             <button
               onClick={() => setIsObjectivesCollapsed(!isObjectivesCollapsed)}
-              className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800/60 transition"
+              className="text-slate-400 hover:text-white p-0.5 sm:p-1 rounded-md hover:bg-slate-800/60 transition shrink-0"
               title="Toggle Objectives"
+              aria-label={isObjectivesCollapsed ? 'Expand mission objectives' : 'Collapse mission objectives'}
             >
               {isObjectivesCollapsed ? (
-                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/60">
-                  {completedCount}/{level.objectives.length} ▾
+                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 px-1 py-0.5 rounded border border-amber-800/60 flex items-center gap-0.5">
+                  {completedCount}/{level.objectives.length}
+                  <ChevronDown className="w-3 h-3" />
                 </span>
               ) : (
-                <span className="text-slate-400 hover:text-white text-xs font-mono">✕</span>
+                <ChevronUp className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
 
-          <div className="text-xs text-emerald-400 font-bangla font-semibold truncate mb-1.5">
+          <div className="text-[10px] sm:text-xs text-emerald-400 font-bangla font-semibold truncate mb-0.5 sm:mb-1.5">
             {level.banglaTitle}
           </div>
 
-          {!isObjectivesCollapsed && (
-            <div className="space-y-1.5 pt-1.5 border-t border-slate-800 text-[11px]">
+          {isObjectivesCollapsed ? (
+            <div className="flex items-start gap-1.5 text-[9px] sm:text-[10px] text-slate-300 leading-snug">
+              <span className="text-emerald-400 font-mono font-bold shrink-0">
+                {completedCount}/{level.objectives.length}
+              </span>
+              <span className="truncate">
+                {nextObjective ? nextObjective.text : 'All objectives complete'}
+              </span>
+            </div>
+          ) : (
+            <div className="objectives-scroll space-y-1 sm:space-y-1.5 pt-1 sm:pt-1.5 border-t border-slate-800 text-[10px] sm:text-[11px] pr-0.5">
               {level.objectives.map((obj) => (
-                <div key={obj.id} className="flex items-start gap-2">
+                <div key={obj.id} className="flex items-start gap-1.5 sm:gap-2">
                   <span
-                    className={`w-3.5 h-3.5 mt-0.5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 transition-colors ${
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 mt-0.5 rounded-full flex items-center justify-center text-[8px] sm:text-[9px] font-bold shrink-0 transition-colors ${
                       obj.completed
                         ? 'bg-emerald-500 text-slate-950 shadow-sm'
                         : 'border border-slate-600 text-transparent'
@@ -126,7 +154,7 @@ export const HUD: React.FC<HUDProps> = ({
                   >
                     ✓
                   </span>
-                  <div className="flex-1 leading-snug">
+                  <div className="flex-1 leading-snug min-w-0">
                     <span className={obj.completed ? 'line-through text-slate-500' : 'text-slate-200'}>
                       {obj.text}
                       {obj.target && (
@@ -142,8 +170,39 @@ export const HUD: React.FC<HUDProps> = ({
           )}
         </div>
 
+        {/* TOUCH ONLY: separate compact health + energy readout under the mission panel */}
+        {isTouchDevice && (
+          <div className="w-full max-w-[13.5rem] rounded-xl border border-slate-700/70 bg-[#121620]/92 px-2 py-1.5 shadow-xl backdrop-blur-md pointer-events-auto">
+            <div className="flex items-center gap-1.5">
+              <Heart className="h-3 w-3 shrink-0 fill-rose-500 text-rose-500" />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-slate-800 bg-slate-900">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-red-600 to-rose-500 shadow-[0_0_6px_#ef4444] transition-all duration-150"
+                  style={{ width: `${healthPercent}%` }}
+                />
+              </div>
+              <span className="w-7 shrink-0 text-right font-mono text-[9px] font-bold text-white">
+                {Math.round(playerStats.health)}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5">
+              <Zap className="h-3 w-3 shrink-0 fill-emerald-400 text-emerald-400" />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-slate-800 bg-slate-900">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_6px_#10b981] transition-all duration-150"
+                  style={{ width: `${staminaPercent}%` }}
+                />
+              </div>
+              <span className="w-7 shrink-0 text-right font-mono text-[9px] font-bold text-white">
+                {Math.round(playerStats.stamina)}
+              </span>
+            </div>
+          </div>
+        )}
+        </div>
+
         {/* TOP CENTER: Boss Bar or Power Cut Alert (Reference Sheet Panel 2) */}
-        <div className="flex-1 max-w-sm mx-2 flex flex-col items-center">
+        <div className="flex-1 max-w-sm mx-2 flex flex-col items-center max-sm:absolute max-sm:left-1/2 max-sm:top-[calc(4.35rem+var(--safe-top))] max-sm:mx-0 max-sm:w-[min(78vw,24rem)] max-sm:-translate-x-1/2 max-sm:z-10 pointer-events-none">
           {bossInfo && (() => {
             const isRage = (bossInfo.health / bossInfo.maxHealth) < 0.4;
             return (
@@ -194,34 +253,35 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
 
         {/* TOP RIGHT: Compact Pill with Kills, Score, Pause & Audio Diagnostics Toggle */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Audio Diagnostics Toggle Button */}
           <button
             onClick={() => setShowAudioDiag(!showAudioDiag)}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider transition-all border shadow-lg flex items-center gap-1.5 ${
+            className={`px-1.5 sm:px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider transition-all border shadow-lg flex items-center gap-1.5 ${
               showAudioDiag
                 ? 'bg-amber-500 text-slate-950 border-amber-300 ring-2 ring-amber-400'
                 : 'bg-[#121620]/95 text-emerald-400 hover:text-emerald-300 border-emerald-500/50 hover:border-emerald-400'
             }`}
             title="Toggle Audio Diagnostics Panel"
+            aria-label="Toggle audio diagnostics"
           >
             <span>🔊</span>
             <span className="hidden sm:inline">AUDIO DIAG</span>
           </button>
 
-          <div className="bg-[#121620]/95 border border-slate-700/80 rounded-full px-3 py-1 flex items-center gap-2.5 text-xs shadow-2xl">
+          <div className="bg-[#121620]/95 border border-slate-700/80 rounded-full px-2 sm:px-3 py-1 flex items-center gap-1.5 sm:gap-2.5 text-xs shadow-2xl">
             {/* Kills */}
-            <div className="flex items-center gap-1">
-              <Skull className="w-3.5 h-3.5 text-rose-400" />
-              <span className="font-mono font-bold text-white text-xs">{playerStats.kills}</span>
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <Skull className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400" />
+              <span className="font-mono font-bold text-white text-[10px] sm:text-xs">{playerStats.kills}</span>
             </div>
 
             <div className="h-3 w-[1px] bg-slate-700" />
 
             {/* Score */}
-            <div className="flex items-center gap-1">
-              <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-mono font-bold text-amber-300 text-xs">{playerStats.score}</span>
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+              <span className="font-mono font-bold text-amber-300 text-[10px] sm:text-xs">{playerStats.score}</span>
             </div>
 
             <div className="h-3 w-[1px] bg-slate-700" />
@@ -231,16 +291,19 @@ export const HUD: React.FC<HUDProps> = ({
               onClick={onPause}
               className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-600 flex items-center justify-center text-slate-200 transition shadow active:scale-90"
               title="Pause Game (ESC)"
+              aria-label="Pause game"
             >
               <Pause className="w-2.5 h-2.5 fill-slate-200" />
             </button>
           </div>
+
+          <FullscreenButton variant="game" />
         </div>
       </div>
 
       {/* AUDIO DIAGNOSTICS OVERLAY (PART 4 REQUIREMENT) */}
       {showAudioDiag && (
-        <div className="absolute top-16 right-4 w-80 sm:w-96 bg-[#121620]/98 backdrop-blur-xl border border-emerald-500/60 rounded-2xl p-3.5 shadow-2xl pointer-events-auto z-40 text-xs text-slate-200 font-mono">
+        <div className="absolute top-[calc(3.4rem+var(--safe-top))] right-[calc(0.5rem+var(--safe-right))] w-[min(92vw,24rem)] max-h-[72dvh] overflow-y-auto bg-[#121620]/98 backdrop-blur-xl border border-emerald-500/60 rounded-2xl p-3.5 shadow-2xl pointer-events-auto z-40 text-xs text-slate-200 font-mono">
           <div className="flex items-center justify-between border-b border-slate-700 pb-2 mb-2.5">
             <div className="flex items-center gap-1.5 font-bold text-emerald-400 tracking-wider">
               <span>🔊</span>
@@ -364,15 +427,19 @@ export const HUD: React.FC<HUDProps> = ({
       {/* ======================================================== */}
       {/* CENTER: Minimal Crosshair with Dynamic Red Hitmarker     */}
       {/* ======================================================== */}
-      <div className="self-center flex items-center justify-center pointer-events-none relative">
+      {/* Invisible flow spacer keeps the old flex distribution while the
+          crosshair itself is pinned to the true screen centre (the camera aim
+          point), instead of drifting with the HUD's variable-height panels. */}
+      <div className="h-6 w-6 shrink-0 pointer-events-none" aria-hidden="true" />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
         <div className="relative w-6 h-6 flex items-center justify-center">
           {/* Center tiny dot */}
-          <div className="w-1.5 h-1.5 rounded-full bg-white/95 shadow-sm" />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/95 shadow-[0_0_3px_rgba(0,0,0,0.9)]" />
           {/* Crosshair ticks with gap */}
-          <div className="absolute left-0 w-1.5 h-[1.5px] bg-white/80" />
-          <div className="absolute right-0 w-1.5 h-[1.5px] bg-white/80" />
-          <div className="absolute top-0 h-1.5 w-[1.5px] bg-white/80" />
-          <div className="absolute bottom-0 h-1.5 w-[1.5px] bg-white/80" />
+          <div className="absolute left-0 w-1.5 h-[1.5px] bg-white/80 shadow-[0_0_2px_rgba(0,0,0,0.9)]" />
+          <div className="absolute right-0 w-1.5 h-[1.5px] bg-white/80 shadow-[0_0_2px_rgba(0,0,0,0.9)]" />
+          <div className="absolute top-0 h-1.5 w-[1.5px] bg-white/80 shadow-[0_0_2px_rgba(0,0,0,0.9)]" />
+          <div className="absolute bottom-0 h-1.5 w-[1.5px] bg-white/80 shadow-[0_0_2px_rgba(0,0,0,0.9)]" />
 
           {/* Dynamic Hitmarker Flash on Damage */}
           {hitmarkerActive && (
@@ -382,8 +449,8 @@ export const HUD: React.FC<HUDProps> = ({
           )}
         </div>
 
-        {/* Contextual Interaction Prompt */}
-        {canInteract && (
+        {/* Contextual Interaction Prompt (desktop only: touch uses its own button) */}
+        {canInteract && !isTouchDevice && (
           <div className="absolute top-8 bg-[#121620]/95 border border-amber-400/90 text-amber-300 px-3 py-1 rounded-lg text-xs font-bold shadow-2xl flex items-center gap-1.5 whitespace-nowrap">
             <span className="bg-amber-400 text-slate-950 px-1 py-0.5 rounded text-[9px] font-game">E</span>
             <span>{interactionPrompt || 'INTERACT'}</span>
@@ -394,12 +461,26 @@ export const HUD: React.FC<HUDProps> = ({
       {/* ======================================================== */}
       {/* SUBTITLE & DIALOGUE (Reference Sheet Panel 7)             */}
       {/* ======================================================== */}
-      <div className="self-center flex items-center justify-center pointer-events-auto mb-2 min-h-[52px]">
+      <div
+        className={`self-center flex items-center justify-center pointer-events-auto ${
+          isTouchDevice
+            ? 'mb-[calc(4.6rem+var(--safe-bottom))] w-[min(30rem,52vw)] min-h-0'
+            : 'mb-2 min-h-[52px]'
+        }`}
+      >
         {voiceSubtitle && (
-          <div className="bg-[#121620]/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 max-w-lg text-left shadow-2xl flex items-center gap-3 transition-all">
+          <div
+            className={`bg-[#121620]/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl flex items-center text-left transition-all ${
+              isTouchDevice ? 'max-w-full gap-2 p-2' : 'max-w-lg sm:px-4 sm:py-2.5 p-2.5 gap-3'
+            }`}
+          >
             {/* Character Avatar (Dhaka Protagonist / Boss) */}
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-600 via-orange-600 to-red-600 border border-amber-400/60 p-0.5 shrink-0 flex items-center justify-center shadow-lg">
-              <span className="text-2xl drop-shadow">
+            <div
+              className={`rounded-xl bg-gradient-to-br from-amber-600 via-orange-600 to-red-600 border border-amber-400/60 p-0.5 shrink-0 flex items-center justify-center shadow-lg ${
+                isTouchDevice ? 'h-9 w-9' : 'w-11 h-11'
+              }`}
+            >
+              <span className={`drop-shadow ${isTouchDevice ? 'text-lg' : 'text-2xl'}`}>
                 {voiceSubtitle.category === 'boss' ? '👑' : voiceSubtitle.category === 'whisper' ? '🦟' : '👦🏽'}
               </span>
             </div>

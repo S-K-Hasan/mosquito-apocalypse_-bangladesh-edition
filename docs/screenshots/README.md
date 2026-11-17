@@ -1,9 +1,19 @@
 # Screenshots
 
-Captured on 2026-11-16 from the dev build through Chrome/Playwright at
-1708 × 771 with the final code (after weapon-rig, particle and pointer-lock
-fixes). The browser uses Microsoft Basic Render Driver, so these are correctness
-and composition checks, not performance evidence.
+Captured on 2026-11-16/17 through Chrome/Playwright with the final code (after the
+weapon-rig, particle, pointer-lock, HUD and model-batching work). The browser uses
+Microsoft Basic Render Driver, so these are correctness and composition checks,
+not performance evidence.
+
+The last four files were added by the mobile-HUD/PWA pass and are the ones to
+check for layout work:
+
+| File | Viewport | What to look for |
+|---|---|---|
+| `desktop-1920x1080.png` | 1920 × 1080 | Desktop HUD, crosshair exactly at 960 × 540, weapon rig clear of centre |
+| `boss-wave-1920x1080.png` | 1920 × 1080 | Midnight Stalker, Dengue King and Invisible Apex rendered together after mesh batching |
+| `mobile-landscape-915x412.png` | 915 × 412 (touch) | Collapsed mission panel, separate health/energy bars, joystick, RUN, all five weapon slots, 3 × 3 action cluster |
+| `mobile-portrait-412x915.png` | 412 × 915 (touch) | Rotate-to-landscape overlay |
 
 | File | Scene | What to look for |
 |---|---|---|

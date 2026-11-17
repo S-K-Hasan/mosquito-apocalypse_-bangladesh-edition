@@ -25,6 +25,7 @@ export class ParticleSystem {
   public floatingTexts: FloatingText[] = [];
   private pointsMesh: THREE.Points;
   private geometry: THREE.BufferGeometry;
+  private material: THREE.ShaderMaterial;
   private maxParticles = 1200;
   private positions: Float32Array;
   private colors: Float32Array;
@@ -40,11 +41,12 @@ export class ParticleSystem {
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
     this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
     this.geometry.setAttribute('size', new THREE.BufferAttribute(this.sizes, 1));
+    this.geometry.setDrawRange(0, 0);
 
     // Per-particle size and soft round sprite. PointsMaterial ignores the size
     // attribute, so sparks and smoke all looked identical; this shader keeps the
     // authored sizes and gives every particle a soft circular falloff.
-    const material = new THREE.ShaderMaterial({
+    this.material = new THREE.ShaderMaterial({
       uniforms: {
         uPixelRatio: { value: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2) },
       },
@@ -76,9 +78,15 @@ export class ParticleSystem {
       depthTest: true,
     });
 
-    this.pointsMesh = new THREE.Points(this.geometry, material);
+    this.pointsMesh = new THREE.Points(this.geometry, this.material);
     this.pointsMesh.frustumCulled = false;
     this.scene.add(this.pointsMesh);
+  }
+
+  /** Keep point sizes consistent with the renderer's adaptive pixel ratio. */
+  public setPixelRatio(ratio: number) {
+    const uniform = this.material.uniforms.uPixelRatio;
+    if (uniform && uniform.value !== ratio) uniform.value = ratio;
   }
 
   public emitSparks(pos: THREE.Vector3, count = 20, isCharged = false) {
@@ -247,16 +255,17 @@ export class ParticleSystem {
   }
 
   public update(delta: number) {
-    let pIdx = 0;
+    // Compact in place: dead particles are dropped and live ones are written
+    // back from index 0. This removes the old splice() from a reverse loop
+    // (O(n^2) shifting during boss swarms) and avoids clearing 1200 unused
+    // buffer slots every frame, because the draw range is trimmed instead.
+    let write = 0;
 
-    for (let i = this.particles.length - 1; i >= 0; i--) {
+    for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
       p.life -= delta;
 
-      if (p.life <= 0) {
-        this.particles.splice(i, 1);
-        continue;
-      }
+      if (p.life <= 0) continue;
 
       // Physics integration
       p.position.addScaledVector(p.velocity, delta);
@@ -270,34 +279,30 @@ export class ParticleSystem {
         p.size += 0.2 * delta;
       }
 
-      if (pIdx < this.maxParticles) {
-        const i3 = pIdx * 3;
-        this.positions[i3] = p.position.x;
-        this.positions[i3 + 1] = p.position.y;
-        this.positions[i3 + 2] = p.position.z;
+      this.particles[write] = p;
 
-        const alpha = p.life / p.maxLife;
-        this.colors[i3] = p.color.r * alpha;
-        this.colors[i3 + 1] = p.color.g * alpha;
-        this.colors[i3 + 2] = p.color.b * alpha;
+      const i3 = write * 3;
+      this.positions[i3] = p.position.x;
+      this.positions[i3 + 1] = p.position.y;
+      this.positions[i3 + 2] = p.position.z;
 
-        this.sizes[pIdx] = p.size * (p.type === 'spark' ? alpha : 1.0);
-        pIdx++;
-      }
+      const alpha = p.life / p.maxLife;
+      this.colors[i3] = p.color.r * alpha;
+      this.colors[i3 + 1] = p.color.g * alpha;
+      this.colors[i3 + 2] = p.color.b * alpha;
+
+      this.sizes[write] = p.size * (p.type === 'spark' ? alpha : 1.0);
+      write++;
     }
 
-    // Zero out remaining buffer points
-    for (let j = pIdx; j < this.maxParticles; j++) {
-      const j3 = j * 3;
-      this.positions[j3] = 0;
-      this.positions[j3 + 1] = -9999;
-      this.positions[j3 + 2] = 0;
-      this.sizes[j] = 0;
-    }
+    this.particles.length = write;
+    this.geometry.setDrawRange(0, write);
 
-    this.geometry.attributes.position.needsUpdate = true;
-    this.geometry.attributes.color.needsUpdate = true;
-    this.geometry.attributes.size.needsUpdate = true;
+    if (write > 0) {
+      this.geometry.attributes.position.needsUpdate = true;
+      this.geometry.attributes.color.needsUpdate = true;
+      this.geometry.attributes.size.needsUpdate = true;
+    }
 
     // Update floating texts
     for (let k = this.floatingTexts.length - 1; k >= 0; k--) {

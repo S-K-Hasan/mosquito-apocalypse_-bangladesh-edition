@@ -266,9 +266,11 @@ export interface ActiveLightingRig {
 export function applyLightingPreset(
   scene: THREE.Scene,
   presetId: LightingPresetId,
-  isSoftwareGl: boolean
+  isSoftwareGl: boolean,
+  lowPower = false
 ): ActiveLightingRig {
   const config = LIGHTING_PRESETS[presetId] || LIGHTING_PRESETS.indoor_nighttime;
+  const shadowSize = lowPower ? 512 : 1024;
 
   // Remove existing lighting group if present
   const existing = scene.getObjectByName('__activeLightingGroup');
@@ -295,8 +297,8 @@ export function applyLightingPreset(
     pLight.position.set(...config.keyLight.position);
     pLight.castShadow = !isSoftwareGl;
     if (!isSoftwareGl) {
-      pLight.shadow.mapSize.width = 1024;
-      pLight.shadow.mapSize.height = 1024;
+      pLight.shadow.mapSize.width = shadowSize;
+      pLight.shadow.mapSize.height = shadowSize;
       pLight.shadow.bias = -0.0005;
       pLight.shadow.normalBias = 0.02;
     }
@@ -306,8 +308,8 @@ export function applyLightingPreset(
     dLight.position.set(...config.keyLight.position);
     dLight.castShadow = !isSoftwareGl;
     if (!isSoftwareGl) {
-      dLight.shadow.mapSize.width = 1024;
-      dLight.shadow.mapSize.height = 1024;
+      dLight.shadow.mapSize.width = shadowSize;
+      dLight.shadow.mapSize.height = shadowSize;
       dLight.shadow.bias = -0.0005;
       dLight.shadow.normalBias = 0.02;
       dLight.shadow.camera.near = 0.5;

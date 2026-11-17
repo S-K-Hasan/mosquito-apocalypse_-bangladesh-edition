@@ -16,11 +16,104 @@ import { soundManager } from '../systems/audio';
 import { voiceManager } from '../systems/voiceManager';
 import { ParticleSystem } from '../systems/particles';
 import { buildLevelEnvironment } from '../levels/environmentBuilder';
-import { createWeaponModel, createMosquitoModel, WEAPON_VIEWMODEL_RIGS } from '../systems/models';
+import { createWeaponModel, createMosquitoModel, optimizeModelDrawCalls, WEAPON_VIEWMODEL_RIGS } from '../systems/models';
 import { MobileInputState } from './MobileControls';
 import { applyLightingPreset, LightingPresetId } from '../systems/lightingPresets';
 import { createAtmosphere } from '../systems/atmosphere';
 import { mergeStaticEnvironment } from '../systems/sceneOptimizer';
+import { isLowPowerDevice } from '../utils/device';
+
+interface MosquitoNodes {
+  leftWing?: THREE.Object3D | null;
+  rightWing?: THREE.Object3D | null;
+  leftRearWing?: THREE.Object3D | null;
+  rightRearWing?: THREE.Object3D | null;
+  leftLegs?: THREE.Object3D | null;
+  rightLegs?: THREE.Object3D | null;
+  abdomen?: THREE.Object3D | null;
+  bossThorax?: THREE.Object3D | null;
+  bossWeakPoint?: THREE.Object3D | null;
+  midnightLantern?: THREE.Object3D | null;
+  venomDrop?: THREE.Object3D | null;
+  invisibleBioCore?: THREE.Object3D | null;
+  bossAuraLight?: THREE.Object3D | null;
+  camouflageMaterials?: THREE.MeshPhysicalMaterial[];
+}
+
+/**
+ * Building a mosquito from scratch allocates dozens of geometries. A cloned
+ * template shares those geometries/materials, so spawning a swarm is cheap and
+ * the node lookups the animation loop needs are cached once per enemy.
+ */
+const MOSQUITO_TEMPLATES = new Map<EnemyType, THREE.Group>();
+
+/** Dispose unique GPU resources (used for placed coils; shared models are kept). */
+function disposeObject3D(root: THREE.Object3D) {
+  root.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry?.dispose();
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!material) continue;
+      const mat = material as THREE.MeshStandardMaterial;
+      mat.map?.dispose();
+      mat.normalMap?.dispose();
+      mat.roughnessMap?.dispose();
+      mat.metalnessMap?.dispose();
+      mat.alphaMap?.dispose();
+      mat.emissiveMap?.dispose();
+      mat.dispose();
+    }
+  });
+}
+
+function createEnemyMesh(type: EnemyType): THREE.Group {
+  let template = MOSQUITO_TEMPLATES.get(type);
+  if (!template) {
+    template = createMosquitoModel(type);
+    optimizeModelDrawCalls(template);
+    MOSQUITO_TEMPLATES.set(type, template);
+  }
+
+  const mesh = template.clone(true) as THREE.Group;
+  const find = (name: string) => mesh.getObjectByName(name);
+  const camouflageMaterials: THREE.MeshPhysicalMaterial[] = [];
+
+  if (type === 'boss_invisible') {
+    mesh.traverse((child) => {
+      const asMesh = child as THREE.Mesh;
+      if (!asMesh.isMesh) return;
+      const materials = Array.isArray(asMesh.material) ? asMesh.material : [asMesh.material];
+      for (const mat of materials) {
+        const physical = mat as THREE.MeshPhysicalMaterial;
+        if (physical && physical.transmission !== undefined && !camouflageMaterials.includes(physical)) {
+          camouflageMaterials.push(physical);
+        }
+      }
+    });
+  }
+
+  const nodes: MosquitoNodes = {
+    leftWing: find('leftWing'),
+    rightWing: find('rightWing'),
+    leftRearWing: find('leftRearWing'),
+    rightRearWing: find('rightRearWing'),
+    leftLegs: find('leftLegs'),
+    rightLegs: find('rightLegs'),
+    abdomen: find('abdomen'),
+    bossThorax: find('bossThorax'),
+    bossWeakPoint: find('bossWeakPoint'),
+    midnightLantern: find('midnightLantern'),
+    venomDrop: find('venomDrop'),
+    invisibleBioCore: find('invisibleBioCore'),
+    bossAuraLight: find('bossAuraLight'),
+    camouflageMaterials,
+  };
+  mesh.userData.enemyNodes = nodes;
+  return mesh;
+}
+
 
 interface GameCanvasProps {
   level: LevelConfig;
@@ -35,7 +128,7 @@ interface GameCanvasProps {
   onBossHealthChange: (boss: { name: string; health: number; maxHealth: number } | null) => void;
   onHitmarker: () => void;
   onCanInteractChange: (canInteract: boolean, prompt?: string) => void;
-  mobileInput: MobileInputState;
+  mobileInputRef: React.MutableRefObject<MobileInputState>;
   mouseSensitivity: number;
   isPaused: boolean;
   attackTriggerRef: React.MutableRefObject<{
@@ -59,7 +152,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onBossHealthChange,
   onHitmarker,
   onCanInteractChange,
-  mobileInput,
+  mobileInputRef,
   mouseSensitivity,
   isPaused,
   attackTriggerRef,
@@ -73,7 +166,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     isPaused,
     mouseSensitivity,
     level,
-    mobileInput,
+    mobileInputRef,
   });
 
   stateRef.current = {
@@ -82,7 +175,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     isPaused,
     mouseSensitivity,
     level,
-    mobileInput,
+    mobileInputRef,
   };
 
   useEffect(() => {
@@ -106,26 +199,86 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const width = containerRef.current.clientWidth || window.innerWidth;
     const height = containerRef.current.clientHeight || window.innerHeight;
 
+    // Quality tier: never removes gameplay, only caps GPU cost. The adaptive
+    // loop below can lower the pixel ratio further if measured frames slow down.
+    const isLowPower = isLowPowerDevice();
+    const nativeDpr = window.devicePixelRatio || 1;
+    const maxPixelRatio = isSoftwareGl ? 1 : isLowPower ? Math.min(nativeDpr, 1.25) : Math.min(nativeDpr, 1.5);
+    let activePixelRatio = maxPixelRatio;
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(level.skyColor);
     scene.fog = new THREE.FogExp2(level.fogColor, level.fogDensity);
 
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 120);
 
     const renderer = new THREE.WebGLRenderer({
-      antialias: !isSoftwareGl,
+      antialias: !isSoftwareGl && !isLowPower,
       powerPreference: 'high-performance',
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(activePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95;
     renderer.shadowMap.enabled = !isSoftwareGl;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // PCFSoftShadowMap costs a second blur pass per shadow map. Mid-range
+    // phones keep contact shadows with the cheaper PCF filter.
+    renderer.shadowMap.type = isLowPower ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 
     containerRef.current.innerHTML = '';
     containerRef.current.appendChild(renderer.domElement);
+
+    // ------------------------------------------------------------------
+    // Reliable viewport resizing. ResizeObserver covers fullscreen, browser
+    // toolbar collapse, split-screen and CSS layout changes; window resize and
+    // orientationchange are added for older mobile browsers. Work is
+    // coalesced into one animation frame so a burst of events resizes once.
+    // ------------------------------------------------------------------
+    let resizeFrame = 0;
+    let lastWidth = width;
+    let lastHeight = height;
+    let particleSystemRef: ParticleSystem | null = null;
+
+    const applyViewportSize = (force = false) => {
+      resizeFrame = 0;
+      const el = containerRef.current;
+      if (!el) return;
+
+      const w = Math.max(1, Math.round(el.clientWidth || window.innerWidth));
+      const h = Math.max(1, Math.round(el.clientHeight || window.innerHeight));
+      const dpr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, activePixelRatio));
+
+      if (force || Math.abs(renderer.getPixelRatio() - dpr) > 0.001) {
+        renderer.setPixelRatio(dpr);
+        particleSystemRef?.setPixelRatio(dpr);
+      }
+
+      if (force || w !== lastWidth || h !== lastHeight) {
+        lastWidth = w;
+        lastHeight = h;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    };
+
+    const scheduleResize = () => {
+      if (resizeFrame) return;
+      resizeFrame = requestAnimationFrame(() => applyViewportSize(false));
+    };
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => scheduleResize())
+        : null;
+    resizeObserver?.observe(containerRef.current);
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('orientationchange', scheduleResize);
+    window.visualViewport?.addEventListener('resize', scheduleResize);
+    document.addEventListener('fullscreenchange', scheduleResize);
+    document.addEventListener('webkitfullscreenchange', scheduleResize);
+    applyViewportSize(true);
 
     // Studio Environment map
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -134,7 +287,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Global Lighting Rig from presets system (Balanced ambient, directional key, fill, and soft shadows)
     const presetId: LightingPresetId = level.lightingPreset || 'indoor_nighttime';
-    const lightingRig = applyLightingPreset(scene, presetId, isSoftwareGl);
+    const lightingRig = applyLightingPreset(scene, presetId, isSoftwareGl, isLowPower);
     renderer.toneMappingExposure = lightingRig.config.exposure;
 
     // Flashlight (Player attached spot light with realistic cone and falloff)
@@ -147,8 +300,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     flashlight.target = flashTarget;
     flashlight.castShadow = !isSoftwareGl;
     if (!isSoftwareGl) {
-      flashlight.shadow.mapSize.width = 1024;
-      flashlight.shadow.mapSize.height = 1024;
+      const shadowSize = isLowPower ? 512 : 1024;
+      flashlight.shadow.mapSize.width = shadowSize;
+      flashlight.shadow.mapSize.height = shadowSize;
       flashlight.shadow.bias = -0.0005;
       flashlight.shadow.camera.near = 0.2;
       flashlight.shadow.camera.far = 18;
@@ -190,6 +344,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Particle System
     const particles = new ParticleSystem(scene);
+    particleSystemRef = particles;
+    particles.setPixelRatio(renderer.getPixelRatio());
 
     // Per-level volumetric air (dust, moonbeams, flickering practicals).
     const atmosphere = createAtmosphere(builtEnv.atmosphere, scene);
@@ -233,6 +389,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         weaponContainer,
         enemies,
         builtEnv,
+        get spawnEnemy() {
+          return spawnEnemy;
+        },
         get activeWeaponMesh() {
           return activeWeaponMesh;
         },
@@ -247,6 +406,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let cameraYaw = 0;
     let walkBobTimer = 0;
     let damageShake = 0;
+    let shakeOffsetX = 0;
+    let shakeOffsetY = 0;
     let isAttacking = false;
     let attackTimer = 0;
     let attackType: 'primary' | 'secondary' = 'primary';
@@ -255,6 +416,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let giantMosquitoVoicePlayed = false;
     let lastMissVoiceTime = 0;
     let lastMosquitoTauntTime = 0;
+    let lastInteractionCan: boolean | null = null;
+    let lastInteractionPrompt = '';
+    let buzzUpdateTimer = 0;
+
+    // Scratch vectors reused by the per-frame enemy loop. Avoids several
+    // hundred short-lived Vector3 allocations per second during swarms.
+    const scratchToPlayer = new THREE.Vector3();
+    const scratchToDir = new THREE.Vector3();
+    const scratchPerp = new THREE.Vector3();
+    const scratchCamDir = new THREE.Vector3();
+    const scratchBehind = new THREE.Vector3();
+    const scratchOrbit = new THREE.Vector3();
 
     // Power Cut (Load Shedding) State & 9-Step Cinematic Sequence
     let isPowerCut = false;
@@ -326,7 +499,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         spawnP[2] + (Math.random() - 0.5) * 1.5,
       ];
 
-      const mesh = createMosquitoModel(type);
+      const mesh = createEnemyMesh(type);
       mesh.position.set(...startPos);
       scene.add(mesh);
 
@@ -921,6 +1094,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const clock = new THREE.Clock();
     let frameId = 0;
 
+    // Adaptive resolution / frame-time counters (dev diagnostics + dynamic DPR).
+    let perfWindowTime = 0;
+    let perfWindowFrames = 0;
+    let perfCooldown = 0;
+    let smoothedFps = 60;
+    let smoothedFrameMs = 16.7;
+    let worstFrameMs = 0;
+
     let devDiagFrame = 0;
     const tick = () => {
       if (stateRef.current.isPaused) {
@@ -929,6 +1110,40 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       const delta = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.elapsedTime;
+
+      // Revert the previous frame's camera-shake offset before physics runs so
+      // repeated hits cannot permanently drift the player/collision position.
+      camera.position.x -= shakeOffsetX;
+      camera.position.y -= shakeOffsetY;
+      shakeOffsetX = 0;
+      shakeOffsetY = 0;
+
+      // Measure real frame pacing and lower the render resolution on slow GPUs.
+      // This reacts to the actual device instead of guessing from a user agent.
+      const frameMs = delta * 1000;
+      smoothedFrameMs = smoothedFrameMs * 0.9 + frameMs * 0.1;
+      smoothedFps = smoothedFps * 0.9 + (1000 / Math.max(frameMs, 0.01)) * 0.1;
+      if (frameMs > worstFrameMs) worstFrameMs = frameMs;
+      perfWindowTime += delta;
+      perfWindowFrames += 1;
+      perfCooldown -= delta;
+      if (perfWindowTime >= 1.5) {
+        const avgFrameMs = (perfWindowTime / Math.max(1, perfWindowFrames)) * 1000;
+        if (document.visibilityState === 'visible' && perfCooldown <= 0) {
+          if (avgFrameMs > 25 && activePixelRatio > 1.0) {
+            activePixelRatio = Math.max(1.0, activePixelRatio - 0.25);
+            applyViewportSize(true);
+            perfCooldown = 2.5;
+          } else if (avgFrameMs < 18 && activePixelRatio < maxPixelRatio) {
+            activePixelRatio = Math.min(maxPixelRatio, activePixelRatio + 0.25);
+            applyViewportSize(true);
+            perfCooldown = 3;
+          }
+        }
+        perfWindowTime = 0;
+        perfWindowFrames = 0;
+      }
 
       // 1. Sync Active Weapon Model if switched in HUD (with smooth tactical lowering & raising animation)
       if (stateRef.current.currentWeapon !== currentRenderedWeapon && !targetWeaponType) {
@@ -951,9 +1166,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       // 2. Camera Orientation (combining mouse look + mobile touch drag look)
-      const mobInput = stateRef.current.mobileInput;
+      const mobInput = stateRef.current.mobileInputRef.current;
+      const isFocusing = Boolean(mobInput?.isFocusing);
+      const isCrouching = Boolean(mobInput?.isCrouching);
       if (mobInput && (mobInput.lookDelta.x !== 0 || mobInput.lookDelta.y !== 0)) {
-        const touchSens = 0.0035 * stateRef.current.mouseSensitivity;
+        const touchSens = 0.0035 * stateRef.current.mouseSensitivity * (isFocusing ? 0.55 : 1);
         cameraYaw -= mobInput.lookDelta.x * touchSens;
         cameraPitch -= mobInput.lookDelta.y * touchSens;
         mobInput.lookDelta.x = 0;
@@ -965,6 +1182,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       euler.x = cameraPitch;
       euler.y = cameraYaw;
       camera.quaternion.setFromEuler(euler);
+
+      // Focus/aim zooms the view without touching the weapon rig or HUD.
+      const targetFov = isFocusing ? 58 : 75;
+      if (Math.abs(camera.fov - targetFov) > 0.02) {
+        camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 12, delta);
+        camera.updateProjectionMatrix();
+      }
 
       // 3. Player Movement & WASD / Mobile Joystick Physics
       const moveInput = new THREE.Vector2();
@@ -979,8 +1203,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         moveInput.y += mobInput.moveVector.y;
       }
 
-      const isSprinting = keysPressed['ShiftLeft'] || keysPressed['ShiftRight'] || (mobInput && mobInput.isSprinting);
-      const speed = isSprinting ? 7.5 : 4.5;
+      const isSprinting = !isCrouching && !isFocusing && (keysPressed['ShiftLeft'] || keysPressed['ShiftRight'] || Boolean(mobInput && mobInput.isSprinting));
+      const speed = isFocusing ? 2.2 : isCrouching ? 2.5 : isSprinting ? 7.5 : 4.5;
 
       if (moveInput.lengthSq() > 0) {
         if (moveInput.length() > 1) moveInput.normalize();
@@ -1010,8 +1234,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       playerVel.y -= 14.0 * delta;
       camera.position.addScaledVector(playerVel, delta);
 
-      // Floor collision
-      const eyeHeight = 1.6;
+      // Floor collision (crouch lowers the eye line without breaking jumping)
+      const eyeHeight = isCrouching ? 1.08 : 1.6;
       if (camera.position.y <= eyeHeight) {
         camera.position.y = eyeHeight;
         playerVel.y = 0;
@@ -1062,18 +1286,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         }
       }
-      onCanInteractChange(nearbyInteraction, interactionText);
+      // Only notify React when the interaction target actually changes; this
+      // used to call setState on every animation frame.
+      if (nearbyInteraction !== lastInteractionCan || interactionText !== lastInteractionPrompt) {
+        lastInteractionCan = nearbyInteraction;
+        lastInteractionPrompt = interactionText;
+        onCanInteractChange(nearbyInteraction, interactionText);
+      }
 
-      // Camera Bobbing
+      // Camera Bobbing (grounded only, so jumping is visible)
       const bobAmount = isSprinting ? 0.045 : 0.025;
       const bobOffset = moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer) * bobAmount : 0;
-      camera.position.y = eyeHeight + bobOffset;
+      if (isGrounded) {
+        camera.position.y = eyeHeight + bobOffset;
+      } else if (camera.position.y < eyeHeight) {
+        camera.position.y = eyeHeight;
+      }
 
-      // Damage shake
+      // Damage shake is applied as a temporary render offset and reverted at
+      // the start of the next frame, so it cannot accumulate into camera drift.
       if (damageShake > 0) {
-        damageShake -= delta * 3.5;
-        camera.position.x += (Math.random() - 0.5) * damageShake * 0.15;
-        camera.position.y += (Math.random() - 0.5) * damageShake * 0.15;
+        damageShake = Math.max(0, damageShake - delta * 3.5);
+        const shakeAmount = damageShake * 0.15;
+        shakeOffsetX = (Math.random() - 0.5) * shakeAmount;
+        shakeOffsetY = (Math.random() - 0.5) * shakeAmount;
+        camera.position.x += shakeOffsetX;
+        camera.position.y += shakeOffsetY;
       }
 
       // 4. Weapon Viewmodel Animation (Lower-Right Corner FPS positioning & dynamic animations)
@@ -1081,7 +1319,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const curW = stateRef.current.currentWeapon;
         const rig = WEAPON_VIEWMODEL_RIGS[curW];
         const switchYOffset = (1.0 - weaponSwitchProgress) * -0.35;
-        const idleBreath = Math.sin(clock.getElapsedTime() * 2.2) * 0.003;
+        const idleBreath = Math.sin(elapsed * 2.2) * 0.003;
         const walkBobX = moveInput.lengthSq() > 0 ? Math.sin(walkBobTimer * 0.5) * 0.007 : 0;
         const walkBobY = moveInput.lengthSq() > 0 ? Math.cos(walkBobTimer) * 0.009 : 0;
 
@@ -1233,7 +1471,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           // Glowing ember tip gently pulses
           const emberLight = activeWeaponMesh?.getObjectByName('coilEmberLight') as THREE.PointLight;
           if (emberLight && !isAttacking) {
-            emberLight.intensity = 0.7 + Math.sin(clock.getElapsedTime() * 4.0) * 0.25;
+            emberLight.intensity = 0.7 + Math.sin(elapsed * 4.0) * 0.25;
           }
           // Emit gentle ambient smoke puff from held coil ember
           if (Math.random() < 0.15) {
@@ -1336,8 +1574,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           // Smoothly project the giant mosquito shadow onto the bedroom wall
           shadowMat.opacity = Math.min(0.85, shadowMat.opacity + delta * 0.45);
           // Creepy breathing and wing flap flutter
-          const flutter = Math.sin(clock.getElapsedTime() * 14.0) * 0.05;
-          const breathe = Math.sin(clock.getElapsedTime() * 2.2) * 0.03;
+          const flutter = Math.sin(elapsed * 14.0) * 0.05;
+          const breathe = Math.sin(elapsed * 2.2) * 0.03;
           builtEnv.giantMosquitoShadowMesh.scale.set(1.0 + breathe, 1.0 + flutter, 1.0);
         } else {
           // Smoothly fade out when power is restored
@@ -1349,14 +1587,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       for (let cIdx = placedCoils.length - 1; cIdx >= 0; cIdx--) {
         const c = placedCoils[cIdx];
         c.data.remainingTime -= delta;
+        const coilPos = new THREE.Vector3(...c.data.position);
 
         if (Math.random() < 0.4) {
-          particles.emitCoilSmoke(new THREE.Vector3(...c.data.position));
+          particles.emitCoilSmoke(coilPos);
         }
 
         enemies.forEach(({ instance, mesh }) => {
           if (instance.state === 'dead') return;
-          const dist = mesh.position.distanceTo(new THREE.Vector3(...c.data.position));
+          const dist = mesh.position.distanceTo(coilPos);
           if (dist <= c.data.radius) {
             instance.health -= 18.0 * delta;
             instance.speed *= 0.6;
@@ -1369,6 +1608,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         if (c.data.remainingTime <= 0) {
           scene.remove(c.mesh);
+          disposeObject3D(c.mesh);
           placedCoils.splice(cIdx, 1);
         }
       }
@@ -1412,22 +1652,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // 9. Mosquito AI, Flight Kinematics & Attack
       let nearestMosquitoDist = 999;
+      let livingCount = 0;
       const playerPos = camera.position;
 
       enemies.forEach(({ instance, mesh }) => {
+        const nodes = mesh.userData.enemyNodes as MosquitoNodes | undefined;
+
         if (instance.state === 'dead') {
           if (mesh.position.y > 0.08) {
             mesh.position.y -= delta * 3.2;
             mesh.rotation.x += delta * 6.5;
             mesh.rotation.z += delta * 4.8;
             // Realistic insect death reflex (legs curl tightly inwards)
-            const leftLegs = mesh.getObjectByName('leftLegs');
-            const rightLegs = mesh.getObjectByName('rightLegs');
-            if (leftLegs) leftLegs.rotation.x = 0.8;
-            if (rightLegs) rightLegs.rotation.x = -0.8;
+            if (nodes?.leftLegs) nodes.leftLegs.rotation.x = 0.8;
+            if (nodes?.rightLegs) nodes.rightLegs.rotation.x = -0.8;
           }
           return;
         }
+
+        livingCount += 1;
 
         // Boss entrance: ease from a small seed into full terrifying scale.
         const entranceT = mesh.userData.entranceT as number | undefined;
@@ -1451,92 +1694,76 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         else if (instance.type === 'boss_invisible') baseWingSpeed = 74;
 
         instance.wingAngle += delta * baseWingSpeed;
-        const leftWing = mesh.getObjectByName('leftWing');
-        const rightWing = mesh.getObjectByName('rightWing');
-        if (leftWing) leftWing.rotation.z = Math.sin(instance.wingAngle) * 0.62;
-        if (rightWing) rightWing.rotation.z = -Math.sin(instance.wingAngle) * 0.62;
+        if (nodes?.leftWing) nodes.leftWing.rotation.z = Math.sin(instance.wingAngle) * 0.62;
+        if (nodes?.rightWing) nodes.rightWing.rotation.z = -Math.sin(instance.wingAngle) * 0.62;
 
-        const leftRearWing = mesh.getObjectByName('leftRearWing');
-        const rightRearWing = mesh.getObjectByName('rightRearWing');
-        if (leftRearWing) leftRearWing.rotation.z = Math.sin(instance.wingAngle + 0.35) * 0.55;
-        if (rightRearWing) rightRearWing.rotation.z = -Math.sin(instance.wingAngle + 0.35) * 0.55;
+        if (nodes?.leftRearWing) nodes.leftRearWing.rotation.z = Math.sin(instance.wingAngle + 0.35) * 0.55;
+        if (nodes?.rightRearWing) nodes.rightRearWing.rotation.z = -Math.sin(instance.wingAngle + 0.35) * 0.55;
 
         // Realistic animated insect leg dangling & sway in flight
-        const leftLegs = mesh.getObjectByName('leftLegs');
-        const rightLegs = mesh.getObjectByName('rightLegs');
-        if (leftLegs && rightLegs) {
+        if (nodes?.leftLegs && nodes?.rightLegs) {
           const legSway = Math.sin(instance.wingAngle * 0.16) * 0.12;
-          leftLegs.rotation.x = legSway;
-          rightLegs.rotation.x = -legSway;
-          leftLegs.rotation.z = Math.cos(instance.wingAngle * 0.16) * 0.06;
-          rightLegs.rotation.z = -Math.cos(instance.wingAngle * 0.16) * 0.06;
+          nodes.leftLegs.rotation.x = legSway;
+          nodes.rightLegs.rotation.x = -legSway;
+          nodes.leftLegs.rotation.z = Math.cos(instance.wingAngle * 0.16) * 0.06;
+          nodes.rightLegs.rotation.z = -Math.cos(instance.wingAngle * 0.16) * 0.06;
         }
 
         // Abdomen breathing pulse
-        const abdomen = mesh.getObjectByName('abdomen');
-        if (abdomen) {
+        if (nodes?.abdomen) {
           const abPulse = 1 + Math.sin(instance.wingAngle * 0.2) * (instance.isRageMode ? 0.14 : 0.08);
-          abdomen.scale.set(abPulse, abPulse, abPulse);
+          nodes.abdomen.scale.set(abPulse, abPulse, abPulse);
         }
 
         // Unique boss secondary motion.
         if (instance.isBoss) {
-          const thorax = mesh.getObjectByName('bossThorax');
-          if (thorax) {
-            const breathe = 1 + Math.sin(clock.getElapsedTime() * 1.7 + instance.hoverOffset) * 0.022;
-            thorax.scale.set(breathe, 1 + (breathe - 1) * 1.4, breathe);
+          if (nodes?.bossThorax) {
+            const breathe = 1 + Math.sin(elapsed * 1.7 + instance.hoverOffset) * 0.022;
+            nodes.bossThorax.scale.set(breathe, 1 + (breathe - 1) * 1.4, breathe);
           }
-          const weakPoint = mesh.getObjectByName('bossWeakPoint');
-          if (weakPoint) {
-            const beat = 1 + Math.sin(clock.getElapsedTime() * 6.2) * 0.22;
-            weakPoint.scale.setScalar(beat);
+          if (nodes?.bossWeakPoint) {
+            const beat = 1 + Math.sin(elapsed * 6.2) * 0.22;
+            nodes.bossWeakPoint.scale.setScalar(beat);
           }
-          const lantern = mesh.getObjectByName('midnightLantern');
-          if (lantern) {
-            const glowPulse = 1 + Math.sin(clock.getElapsedTime() * 3.4) * 0.25;
-            lantern.scale.setScalar(glowPulse);
+          if (nodes?.midnightLantern) {
+            const glowPulse = 1 + Math.sin(elapsed * 3.4) * 0.25;
+            nodes.midnightLantern.scale.setScalar(glowPulse);
           }
         }
 
         // Dripping venom drop animation for Dengue King
-        const venomDrop = mesh.getObjectByName('venomDrop');
-        if (venomDrop) {
-          const dripPhase = (clock.getElapsedTime() * 2.5) % 1.0;
-          const baseY = (venomDrop.userData.baseY as number | undefined) ?? -0.19 * 3.8;
-          venomDrop.position.y = baseY - dripPhase * 0.07;
-          venomDrop.scale.set(1.0 - dripPhase * 0.35, 1.0 + dripPhase * 0.55, 1.0 - dripPhase * 0.35);
+        if (nodes?.venomDrop) {
+          const dripPhase = (elapsed * 2.5) % 1.0;
+          const baseY = (nodes.venomDrop.userData.baseY as number | undefined) ?? -0.19 * 3.8;
+          nodes.venomDrop.position.y = baseY - dripPhase * 0.07;
+          nodes.venomDrop.scale.set(1.0 - dripPhase * 0.35, 1.0 + dripPhase * 0.55, 1.0 - dripPhase * 0.35);
         }
 
         // Optical camouflage shimmer & bioluminescent core for Invisible Mosquito
         if (instance.type === 'boss_invisible') {
-          mesh.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
-              const mat = (child as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
-              if (mat.transmission !== undefined) {
-                mat.opacity = 0.20 + Math.sin(clock.getElapsedTime() * 3.5) * 0.10;
-              }
-            }
-          });
-          const bioCore = mesh.getObjectByName('invisibleBioCore');
-          if (bioCore) {
-            const corePulse = 1.0 + Math.sin(clock.getElapsedTime() * 5.0) * 0.18;
-            bioCore.scale.set(corePulse, corePulse, corePulse);
+          if (nodes?.camouflageMaterials) {
+            const camoOpacity = 0.20 + Math.sin(elapsed * 3.5) * 0.10;
+            for (const mat of nodes.camouflageMaterials) mat.opacity = camoOpacity;
+          }
+          if (nodes?.invisibleBioCore) {
+            const corePulse = 1.0 + Math.sin(elapsed * 5.0) * 0.18;
+            nodes.invisibleBioCore.scale.set(corePulse, corePulse, corePulse);
           }
         }
 
         // If in Rage Mode, emit trailing fiery aura particles & pulse aura light
         if (instance.isRageMode && Math.random() < 0.6) {
           particles.emitBossRageAura(mesh.position);
-          const auraLight = mesh.getObjectByName('bossAuraLight') as THREE.PointLight;
+          const auraLight = nodes?.bossAuraLight as THREE.PointLight | undefined;
           if (auraLight) {
-            auraLight.intensity = 2.4 + Math.sin(clock.getElapsedTime() * 12.0) * 1.2;
+            auraLight.intensity = 2.4 + Math.sin(elapsed * 12.0) * 1.2;
           }
         }
 
         instance.hoverOffset += delta * 3;
         const hoverY = Math.sin(instance.hoverOffset) * 0.015;
 
-        const toPlayer = playerPos.clone().sub(mesh.position);
+        const toPlayer = scratchToPlayer.copy(playerPos).sub(mesh.position);
         toPlayer.y += hoverY;
 
         // Boss unique abilities (per-instance special attack timers)
@@ -1544,9 +1771,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           instance.specialAttackTimer = (instance.specialAttackTimer || 0) + delta;
           if (instance.type === 'boss_midnight' && instance.specialAttackTimer > 5.5) {
             instance.specialAttackTimer = 0;
-            const camDir = new THREE.Vector3();
-            camera.getWorldDirection(camDir);
-            const behindPos = playerPos.clone().add(camDir.multiplyScalar(-3.5));
+            camera.getWorldDirection(scratchCamDir);
+            const behindPos = scratchBehind.copy(playerPos).addScaledVector(scratchCamDir, -3.5);
             mesh.position.set(behindPos.x, playerPos.y + 1.2, behindPos.z);
             soundManager.playBossRoar(1.5);
             particles.emitSparks(mesh.position, 35, true);
@@ -1562,7 +1788,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 // ATTACK 1: STINGER DIVE BOMB CHARGE
                 soundManager.playBossRoar(instance.isRageMode ? 1.6 : 1.3);
                 voiceManager.triggerEvent('boss_dengue_attack');
-                const rushDir = toPlayer.clone().normalize();
+                const rushDir = scratchToDir.copy(toPlayer).normalize();
                 mesh.position.add(rushDir.multiplyScalar(3.0));
                 damageShake = 0.55;
                 particles.emitSparks(mesh.position, 22, true);
@@ -1612,7 +1838,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         // Dynamic Multi-Class Mosquito Kinematics & Flocking AI
         if (dist > 1.2) {
-          const toDir = toPlayer.clone().normalize();
+          const toDir = scratchToDir.copy(toPlayer).normalize();
 
           if (instance.subType === 'fast') {
             // Fast class: erratic zig-zag strafing and sudden sprint dives
@@ -1621,25 +1847,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               instance.strafeTimer = 0;
               instance.strafeDir = (instance.strafeDir || 1) * -1;
             }
-            const perp = new THREE.Vector3(-toDir.z, 0, toDir.x).normalize().multiplyScalar((instance.strafeDir || 1) * 1.4);
+            const perp = scratchPerp
+              .set(-toDir.z, 0, toDir.x)
+              .normalize()
+              .multiplyScalar((instance.strafeDir || 1) * 1.4);
             const isDiving = dist < 3.8;
             const diveSpeed = isDiving ? 1.35 : 1.0;
             const composite = toDir.add(perp).normalize();
             mesh.position.addScaledVector(composite, instance.speed * diveSpeed * delta);
           } else if (instance.subType === 'sneaky') {
             // Sneaky class: attempts to flank behind player's blind spot
-            const camForward = new THREE.Vector3();
-            camera.getWorldDirection(camForward);
-            const behindPos = playerPos.clone().sub(camForward.clone().multiplyScalar(2.5));
+            camera.getWorldDirection(scratchCamDir);
+            const behindPos = scratchBehind.copy(playerPos).addScaledVector(scratchCamDir, -2.5);
             const toBehind = behindPos.sub(mesh.position);
 
             // If player faces sneaky mosquito directly, camouflages and retreats slightly
-            const toEnemyDir = mesh.position.clone().sub(playerPos).normalize();
-            const angle = camForward.angleTo(toEnemyDir);
+            const toEnemyDir = scratchPerp.copy(mesh.position).sub(playerPos).normalize();
+            const angle = scratchCamDir.angleTo(toEnemyDir);
             if (angle < Math.PI / 4) {
               // Direct player gaze: fade to near-invisibility
               instance.stealthOpacity = THREE.MathUtils.damp(instance.stealthOpacity, 0.18, 8, delta);
-              mesh.position.addScaledVector(toDir.clone().negate(), instance.speed * 0.6 * delta);
+              mesh.position.addScaledVector(toDir, -instance.speed * 0.6 * delta);
             } else {
               instance.stealthOpacity = THREE.MathUtils.damp(instance.stealthOpacity, 0.75, 4, delta);
               const flankDir = toBehind.lengthSq() > 0.5 ? toBehind.normalize() : toDir;
@@ -1647,12 +1875,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             }
           } else if (instance.subType === 'swarm') {
             // Swarm class: rapid orbiting spiral and jittery aerial bob
-            const orbitOffset = new THREE.Vector3(
-              Math.sin(clock.getElapsedTime() * 4.5 + instance.hoverOffset) * 1.2,
-              Math.cos(clock.getElapsedTime() * 6.0 + instance.hoverOffset) * 0.4,
-              Math.cos(clock.getElapsedTime() * 4.5 + instance.hoverOffset) * 1.2
+            const orbitOffset = scratchOrbit.set(
+              Math.sin(elapsed * 4.5 + instance.hoverOffset) * 1.2,
+              Math.cos(elapsed * 6.0 + instance.hoverOffset) * 0.4,
+              Math.cos(elapsed * 4.5 + instance.hoverOffset) * 1.2
             );
-            const swarmDir = toPlayer.clone().add(orbitOffset).normalize();
+            const swarmDir = scratchPerp.copy(toPlayer).add(orbitOffset).normalize();
             mesh.position.addScaledVector(swarmDir, instance.speed * delta);
           } else if (instance.subType === 'armored') {
             // Armored class: heavy, relentless, unstoppable forward charge
@@ -1706,18 +1934,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Signature Mosquito Dialogue Trigger: "মামুর বেটা পারলে আজকে ঘুমা!"
       // Fires when mosquitoes are actively buzzing close to the player
-      if (nearestMosquitoDist < 3.8 && clock.getElapsedTime() - lastMosquitoTauntTime > 11.0) {
-        lastMosquitoTauntTime = clock.getElapsedTime();
+      if (nearestMosquitoDist < 3.8 && elapsed - lastMosquitoTauntTime > 11.0) {
+        lastMosquitoTauntTime = elapsed;
         voiceManager.triggerEvent('mosquito_taunt_signature');
       }
 
-      // Update spatial buzzing audio
-      const livingCount = enemies.filter((e) => e.instance.state !== 'dead').length;
-      soundManager.updateMosquitoBuzz(livingCount, nearestMosquitoDist, isPowerCut);
+      // Update spatial buzzing audio at ~8 Hz. The AudioParam ramps used to be
+      // scheduled on every animation frame, which produced unnecessary Web
+      // Audio work during large swarms.
+      buzzUpdateTimer += delta;
+      if (livingCount === 0 || buzzUpdateTimer >= 0.12) {
+        buzzUpdateTimer = 0;
+        soundManager.updateMosquitoBuzz(livingCount, nearestMosquitoDist, isPowerCut);
+      }
 
       // 10. Update Particles & Atmosphere
       particles.update(delta);
-      atmosphere.update(clock.getElapsedTime(), delta);
+      atmosphere.update(elapsed, delta);
 
       renderer.render(scene, camera);
 
@@ -1733,10 +1966,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
         const diagXs = diagCorners.map((v) => v.x);
         const diagYs = diagCorners.map((v) => v.y);
+        const perfMemory = (performance as Performance & {
+          memory?: { usedJSHeapSize: number };
+        }).memory;
         document.documentElement.dataset.gameDiag = JSON.stringify({
           calls: renderer.info.render.calls,
           triangles: renderer.info.render.triangles,
           enemies: enemies.length,
+          livingEnemies: livingCount,
+          fps: +smoothedFps.toFixed(1),
+          frameMs: +smoothedFrameMs.toFixed(2),
+          worstFrameMs: +worstFrameMs.toFixed(2),
+          dpr: +renderer.getPixelRatio().toFixed(2),
+          jsHeapMB: perfMemory ? +(perfMemory.usedJSHeapSize / 1048576).toFixed(1) : null,
           weapon: currentRenderedWeapon,
           centerClear: !(Math.max(...diagXs) > -0.33 && Math.min(...diagXs) < 0.33 && Math.max(...diagYs) > -0.33 && Math.min(...diagYs) < 0.33),
           weaponNdc: {
@@ -1746,6 +1988,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             maxY: +Math.max(...diagYs).toFixed(2),
           },
         });
+        worstFrameMs = 0;
       }
 
       frameId = requestAnimationFrame(tick);
@@ -1753,33 +1996,34 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     frameId = requestAnimationFrame(tick);
 
-    // Resize handler
-    const handleResize = () => {
-      if (!containerRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', handleResize);
-
     return () => {
       cancelAnimationFrame(frameId);
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', scheduleResize);
+      window.removeEventListener('orientationchange', scheduleResize);
+      window.visualViewport?.removeEventListener('resize', scheduleResize);
+      document.removeEventListener('fullscreenchange', scheduleResize);
+      document.removeEventListener('webkitfullscreenchange', scheduleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('click', handlePointerLock);
       renderer.domElement.removeEventListener('mousedown', handleMouseDown);
       renderer.domElement.removeEventListener('contextmenu', handleContextMenu);
       renderer.domElement.removeEventListener('wheel', handleWheel);
+
+      if (attackTriggerRef.current) attackTriggerRef.current = null;
+      if (document.pointerLockElement === renderer.domElement) {
+        document.exitPointerLock?.();
+      }
 
       soundManager.stopAllMosquitoBuzz();
       soundManager.stopCeilingFan();
       atmosphere.dispose();
       particles.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
     };
   }, [level.id]);
 

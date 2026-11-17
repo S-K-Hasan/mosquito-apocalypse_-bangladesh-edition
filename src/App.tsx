@@ -37,6 +37,7 @@ const INITIAL_MOBILE_INPUT: MobileInputState = {
   isSprinting: false,
   isJumping: false,
   isCrouching: false,
+  isFocusing: false,
   triggerPrimaryAttack: false,
   triggerSecondaryAttack: false,
   triggerInteract: false,
@@ -59,7 +60,9 @@ export default function App() {
   const [hitmarkerActive, setHitmarkerActive] = useState<boolean>(false);
   const [canInteract, setCanInteract] = useState<boolean>(false);
   const [interactionPrompt, setInteractionPrompt] = useState<string | undefined>();
-  const [mobileInput, setMobileInput] = useState<MobileInputState>(INITIAL_MOBILE_INPUT);
+  // Touch input lives in a mutable ref: a finger drag updates it 60-120 times a
+  // second and must not re-render React (or rebuild the Three.js scene state).
+  const mobileInputRef = useRef<MobileInputState>({ ...INITIAL_MOBILE_INPUT });
   const [gameOverReason, setGameOverReason] = useState<string>('');
   const [victoryStats, setVictoryStats] = useState<{ kills: number; time: number; score: number }>({
     kills: 0,
@@ -133,6 +136,14 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [view]);
 
+  // Stable touch-input writer. No React state update occurs per pointer move.
+  const updateMobileInput = useCallback(
+    (updater: (prev: MobileInputState) => MobileInputState) => {
+      mobileInputRef.current = updater(mobileInputRef.current);
+    },
+    []
+  );
+
   // Start Level
   const startLevel = useCallback((lvlId: number) => {
     // Unlock Web Audio and Speech systems synchronously within trusted user interaction event
@@ -162,7 +173,7 @@ export default function App() {
     setBossInfo(null);
     setHitmarkerActive(false);
     setCanInteract(false);
-    setMobileInput(INITIAL_MOBILE_INPUT);
+    mobileInputRef.current = { ...INITIAL_MOBILE_INPUT, moveVector: { x: 0, y: 0 }, lookDelta: { x: 0, y: 0 } };
     setView('playing');
   }, []);
 
@@ -252,7 +263,7 @@ export default function App() {
   const currentLevelConfig = GAME_LEVELS.find((l) => l.id === currentLevelId) || GAME_LEVELS[0];
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black font-sans select-none touch-none">
+    <div id="game-root" className="relative w-full h-full overflow-hidden bg-black font-sans select-none touch-none">
       {view === 'menu' && (
         <MainMenu
           onStartLevel={startLevel}
@@ -279,7 +290,7 @@ export default function App() {
             onBossHealthChange={setBossInfo}
             onHitmarker={handleHitmarker}
             onCanInteractChange={handleCanInteractChange}
-            mobileInput={mobileInput}
+            mobileInputRef={mobileInputRef}
             mouseSensitivity={settings.mouseSensitivity}
             isPaused={isPaused}
             attackTriggerRef={attackTriggerRef}
@@ -300,7 +311,7 @@ export default function App() {
           />
 
           <MobileControls
-            onUpdateInput={setMobileInput}
+            onUpdateInput={updateMobileInput}
             onInteract={() => attackTriggerRef.current?.interact()}
             onToggleFlashlight={() => attackTriggerRef.current?.toggleFlashlight()}
             onAttackPrimary={() => attackTriggerRef.current?.primary()}

@@ -3,3 +3,14 @@ import App from './App.tsx';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
+
+// Installability support. The worker is intentionally network-only (see
+// public/sw.js), so updates are never served from a stale cache.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const base = import.meta.env.BASE_URL || '/';
+    navigator.serviceWorker
+      .register(`${base}sw.js`, { scope: base })
+      .catch((err) => console.warn('[PWA] Service worker registration failed:', err));
+  });
+}
