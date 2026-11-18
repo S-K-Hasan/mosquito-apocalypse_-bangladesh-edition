@@ -14,6 +14,7 @@ check for layout work:
 | `boss-wave-1920x1080.png` | 1920 × 1080 | Midnight Stalker, Dengue King and Invisible Apex rendered together after mesh batching |
 | `mobile-landscape-915x412.png` | 915 × 412 (touch) | Collapsed mission panel, separate health/energy bars, joystick, RUN, all five weapon slots, 3 × 3 action cluster |
 | `mobile-portrait-412x915.png` | 412 × 915 (touch) | Rotate-to-landscape overlay |
+| `level6-wave-bosses.png` | 1366 × 768 CSS, captured at 1093 × 614 device px | Level 6 wave 1 plus the wave 2 bosses: 19 enemies, boss health bar, HUD intact |
 
 | File | Scene | What to look for |
 |---|---|---|
@@ -29,6 +30,15 @@ Notes:
 
 - The screenshots include the HUD and the mission/objective panel because those
   are part of the shipped view.
+- The newest captures were taken at device pixel scale, so a 1366 × 768 CSS
+  viewport is saved as 1093 × 614 pixels. The browser's screenshot API pads the
+  image to the CSS size when the emulated viewport is larger than the physical
+  window; the captures here were clipped to the rendered region instead, so no
+  black bars are app layout.
+- `level6-wave-bosses.png` uses the level's authored wave lists through the same
+  spawn function the game uses. Natural spawning is roughly 20× slower in this
+  environment because agent tabs are background-throttled, so the wave was
+  spawned directly instead of waiting several minutes.
 - Enemy positions and the power-cut phase are time-dependent; a screenshot taken
   a second earlier or later can look different.
 - Level 2's power-cut state is not shown here: at the throttled frame rate in this

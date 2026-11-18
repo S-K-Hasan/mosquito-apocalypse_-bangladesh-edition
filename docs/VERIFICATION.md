@@ -1,13 +1,13 @@
 # Verification log
 
-_Last run: 2026-11-17, after the mobile HUD, fullscreen/PWA, resize and render-batching pass._
+_Last run: 2026-11-18, final verification after the mobile HUD, fullscreen/PWA, resize and render-batching pass._
 
 ## Commands
 
 | Command | Result |
 |---|---|
 | `npm run lint` (`tsc --noEmit`) | Passed, no diagnostics |
-| `npm run build` (`vite build`) | Passed, 1,126.92 kB JS / 302.80 kB gzip, 79.21 kB CSS / 12.25 kB gzip |
+| `npm run build` (`vite build`) | Passed, 1,127.03 kB JS / 302.84 kB gzip, 79.38 kB CSS / 12.30 kB gzip |
 | `npm run dev` + live Playwright run | Passed on desktop and mobile viewports |
 | `vite preview` + live Playwright run | Passed; manifest, icons and service worker served from the production build |
 
@@ -41,6 +41,20 @@ slightly between runs.
 | 42 mixed enemies (stress) | 1,364 | 98.6k | 42 |
 | 3 bosses + 5 swarm | 452 | 63.3k | 8 |
 
+Level 6 ("The Final Night") was measured with its authored waves spawned through
+the game's own spawn function:
+
+| Level 6 encounter (1366 × 768) | Draw calls | Triangles | Enemies |
+|---|---|---|---|
+| Empty arena at level start | 122 | 27.7k | 0–1 |
+| Wave 1 + both wave 2 bosses | 844 | 141.2k | 19 |
+| Wave 1 + wave 2, mid-fight | 1,002 | 166.1k | 25 |
+| Same fight, natural spawns continuing | 1,100 | 181.4k | 27 |
+
+The 19-enemy frame contained 1 Dengue King, 1 Invisible Apex, 2 Midnight
+Stalkers, 4 giants, 3 stealth mosquitoes and 8 swarm mosquitoes; the player was
+at 100/100 health with the Dengue King boss bar active.
+
 Per-enemy mesh count after batching (was → now): normal/fast/swarm/stealth/armored
 28 → 11, giant 45 → 13, Midnight Stalker 97 → 41, Invisible Apex 100 → 54,
 Dengue King 128 → 57. Bosses were re-inspected close-up after the change; their
@@ -66,7 +80,7 @@ bottom of the screen, which is normal for a first-person arm.
 | 1920 × 1080 | 1920 × 1080 | 1536 × 864 (DPR 0.8) | Canvas fills the viewport; crosshair centre measured at 960 × 540 |
 | 1366 × 768 | 1366 × 767 | 1092 × 614 (DPR 0.8) | Canvas fills the viewport; crosshair at 683 × 384; no horizontal overflow |
 | 412 × 915 portrait | 412 × 915 | 330 × 732 (DPR 0.8) | Rotate-to-landscape overlay, menu still scrolls, no overflow |
-| 915 × 412 landscape | 915 × 413 | 732 × 330 (DPR 0.8) | Joystick 112 × 154 at bottom-left, weapon dock 230 × 54 at bottom-centre, action cluster 168 × 168 at bottom-right, no overlap |
+| 915 × 412 landscape | 915 × 412 (DPR 1) | 915 × 412 | Crosshair centre 458 × 206; joystick 112 × 154, dock 230 × 54, cluster 168 × 168, all inside the viewport with no mutual overlap |
 
 The canvas backing store is smaller than the CSS size because the renderer caps
 device pixel ratio (0.8 here) for performance; the canvas is still scaled to the
@@ -76,15 +90,33 @@ coalesced into one rAF, driven by `ResizeObserver` plus `resize`,
 size, camera aspect/projection, DPR, particle point scale and the mobile layout in
 one place.
 
-Notes on this environment: the browser page zoom is 0.8 on this origin, so
-`setViewportSize` was compensated (for example 732 × 331 → 915 × 413) to reach the
-requested CSS size. Viewport changes occasionally needed a different pixel value
-to take effect. Mobile layout was forced with `?mobile=1` because the desktop
-Chrome instance has no touch capability; `?mobile=0` forces desktop layout.
+Notes on this environment: the desktop browser page zoom is 0.8 on this origin, so
+desktop viewports were compensated (for example 732 × 331 → 915 × 413) to reach the
+requested CSS size; with mobile emulation enabled the requested viewport is the CSS
+viewport directly, which is how the exact 915 × 412 run above was taken. Viewport
+changes occasionally needed a different pixel value to take effect. Mobile layout
+was forced with `?mobile=1` because the desktop Chrome instance has no touch
+capability; `?mobile=0` forces desktop layout.
+
+Two capture quirks, both tooling rather than app behaviour: when the emulated
+viewport is larger than the physical window, the screenshot API pads the image to
+the CSS size with black, so the Level 6 screenshot was clipped to the rendered
+region (1093 × 614 for a 1366 × 768 CSS viewport). Under mobile emulation the
+automated pointer click did not dispatch a React event on the menu buttons even
+though the button was the topmost element at that point; a direct DOM click
+started the level, and ordinary mouse clicks work in the non-mobile runs. Both
+screenshots were still taken from the running game, not mocked up.
 
 ## Mobile HUD
 
 Verified in landscape at 915 × 412 against the running game:
+
+Measured layout (CSS pixels, viewport 915 × 412): mission/health block
+`[7, 7, 267, 144]`, joystick `[10, 248, 112, 154]`, weapon dock
+`[343, 349, 230, 54]`, action cluster `[737, 215, 168, 168]`. Every block is
+inside the viewport, no pair overlaps, the page reports no horizontal or vertical
+overflow, and the crosshair centre is `458 × 206` (true centre). The HUD exposes
+five weapon slots and six action buttons.
 
 - Mission panel collapses to one row plus a one-line objective preview; expanding
   it scrolls internally instead of pushing the HUD.
@@ -126,6 +158,9 @@ Verified in landscape at 915 × 412 against the running game:
 - All six levels build, load and render without errors.
 - Mobile landscape HUD layout, portrait rotate overlay, safe areas and the
   collapsible mission panel were measured in a running build.
+- Level 6 was played with its authored wave 1 and both wave 2 bosses (19 enemies,
+  including the Dengue King, Invisible Apex and two Midnight Stalkers) and rendered
+  without errors at 844 draw calls / 141.2k triangles.
 - Resize/DPR handling reproduces the correct canvas size at all four required
   viewports.
 - Static-scenery merging keeps the animated ceiling fan and the Level 4 giant
@@ -140,8 +175,13 @@ Verified in landscape at 915 × 412 against the running game:
 - **Frame rate on real hardware.** This browser only exposes Microsoft Basic
   Render Driver (software GL) and throttles background tabs, so the reported
   `frameMs`/`worstFrameMs` values are meaningless and the 60 FPS desktop target,
-  the 30–60 FPS mid-range Android target and thermal behaviour are untested. Only
-  draw calls, triangle counts and enemy counts are trustworthy.
+  the 30–60 FPS mid-range Android target and thermal behaviour are untested. A
+  representative diagnostic reading was `fps: 2307.7`, `frameMs: 80.56`,
+  `worstFrameMs: 100`; the FPS value is clearly not a real measurement. Only draw
+  calls, triangle counts and enemy counts are trustworthy.
+- **Natural wave pacing.** Agent tabs are background-throttled, so Level 6's waves
+  were spawned through the game's own spawn function instead of waiting for the
+  timed wave loop. The enemy types, counts and models are the authored ones.
 - **Touch feel on a real phone.** HUD geometry was measured with the touch layout
   forced on, but no Android/iOS device was available, so thumb reach, multi-touch
   under real fingers and mobile Chrome's own gesture handling are unconfirmed.
