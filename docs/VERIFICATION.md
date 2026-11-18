@@ -152,6 +152,34 @@ five weapon slots and six action buttons.
   without pinning stale builds.
 - Installation itself, and Android fullscreen behaviour, need a real device.
 
+## Deployment
+
+| Item | Value |
+|---|---|
+| Branch / commits | `master` at `2d56c4d` (feature work) and `e84ceb6` (verification) |
+| Workflow | Deploy to GitHub Pages, run [44215781994](https://github.com/S-K-Hasan/mosquito-apocalypse_-bangladesh-edition/actions/runs/44215781994) |
+| Result | completed / success |
+| Live URL | https://s-k-hasan.github.io/mosquito-apocalypse_-bangladesh-edition/ |
+| Deployed bundle | `assets/index-DStaT-PM.js`, `assets/index-CicWMGfo.css` |
+
+The CI build hash differs from the local build hash because CI rebuilds on Node 22
+with its own minifier ordering; both are built from the same commit.
+
+Live smoke test after the deploy:
+
+- Menu loads with the new FULLSCREEN button, and `manifest.webmanifest`,
+  `icons/icon-192.png` and `icons/apple-touch-icon.png` all return 200.
+- The service worker is `activated` with scope
+  `/mosquito-apocalypse_-bangladesh-edition/`.
+- Starting Level 1 renders a 1093 × 614 canvas at a 1093 × 614 viewport with the
+  crosshair at 547 × 307 and no overflow.
+- At a 915 × 412 mobile viewport the live build exposes the same mobile HUD as the
+  local build: joystick `[10, 248, 112, 154]`, dock `[343, 349, 230, 54]`, cluster
+  `[737, 215, 168, 168]`, five weapon slots, six action buttons, crosshair at
+  458 × 206, no overflow.
+- The only console errors came from a Chrome extension
+  (`chrome-extension://…/executors/200.js`), not from the game.
+
 ## What is actually verified
 
 - Production build and TypeScript check pass.
@@ -169,6 +197,8 @@ five weapon slots and six action buttons.
 - The Bangla voice files load, play, and display the required signature lines
   including the comma in `মামুর বেটা, পারলে আজকে ঘুমা!`.
 - Weapon rigs are per weapon, sit lower-right, and show the hand/forearm.
+- The GitHub Pages deployment completed successfully and the live site serves the
+  new build with the mobile HUD, manifest and service worker.
 
 ## What is not verified
 
